@@ -90,6 +90,10 @@ The snapshot now includes both:
 - The probe disables DJI SDK auto-close-on-background and forces a clean stop/start reconnect on each active transition.
 - `Info.plist` now enables `UIBackgroundModes = external-accessory` so the DJI accessory link can continue in background when iOS allows it.
 - Practical caveat: iOS can still suspend background execution under system policy, so background telemetry is best-effort, not guaranteed continuous forever.
+- Field-verified behavior on iPhone + Mavic Air 2 chain:
+  - our app can continue background telemetry while no competing DJI foreground app takes over
+  - when DJI consumer app becomes foreground, our app telemetry updates stop
+  - after that handoff, reconnect may require a hard reset path
 
 For testing:
 
@@ -98,6 +102,22 @@ For testing:
 3. Return to app and confirm:
    - `Connected` recovers to `true` automatically
    - `Last update` continues refreshing
+
+## Manual recovery action
+
+The UI includes a `Reset DJI Session` button for field recovery:
+
+- stops current SDK product connection
+- clears key-manager listeners and rebinds them
+- restarts product connection retries without killing/relaunching the app
+
+Use this when the app appears stuck after app handoff events.
+
+## Deep-dive blocker report
+
+A detailed use-case + blocker report for external research is available at:
+
+- `docs/integration/dji-ios-background-telemetry-blocker-report-2026-04-20.md`
 
 ## Telemetry verification (Issue #3)
 

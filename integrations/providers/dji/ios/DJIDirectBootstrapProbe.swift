@@ -223,6 +223,25 @@ final class DJIDirectBootstrapProbe: NSObject, DJISDKManagerDelegate, DJIFlightC
         emitSnapshot(reason: "application entered background")
     }
 
+    func manualResetSession() {
+        // Operator-driven hard recovery path when app handoff leaves the SDK in a wedged state.
+        DJISDKManager.stopConnectionToProduct()
+        DJISDKManager.keyManager()?.stopAllListening(ofListeners: self)
+        connectionKey = nil
+        aircraftLocationKey = nil
+        snapshot.keyManagerConnectionKnown = false
+        snapshot.keyManagerConnection = false
+        detachTelemetryDelegates()
+        snapshot.baseProductConnected = false
+        snapshot.connectedProductClass = "none"
+        snapshot.connectedProductModel = "none"
+        startKeyManagerConnectionObserver()
+        startAircraftLocationObserver()
+        startConnectionRetryTimer()
+        attemptStartConnection(reason: "manual reset session")
+        emitSnapshot(reason: "manual reset session triggered")
+    }
+
     func writeSnapshotEnvFile(to url: URL) throws {
         try snapshot.asEnvFile().write(to: url, atomically: true, encoding: .utf8)
     }

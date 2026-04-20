@@ -43,6 +43,14 @@ struct ContentView: View {
             if !coordinator.snapshotFilePath.isEmpty {
                 keyValueRow("Snapshot file", coordinator.snapshotFilePath)
             }
+
+            Button(action: {
+                coordinator.resetDJISession()
+            }) {
+                Text("Reset DJI Session")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .background(Color(.secondarySystemBackground))

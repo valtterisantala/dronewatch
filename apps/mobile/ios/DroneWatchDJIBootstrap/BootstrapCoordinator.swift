@@ -42,6 +42,15 @@ final class BootstrapCoordinator: NSObject, ObservableObject, DJIBootstrapConnec
         probe?.applicationDidEnterBackground()
     }
 
+    func resetDJISession() {
+        appendLog("Manual DJI session reset requested")
+        if probe == nil {
+            startBootstrap()
+            return
+        }
+        probe?.manualResetSession()
+    }
+
     func didUpdateDJIBootstrapSnapshot(_ snapshot: DJIBootstrapConnectionSnapshot) {
         DispatchQueue.main.async {
             let connectionSignature = self.connectionSignature(for: snapshot)

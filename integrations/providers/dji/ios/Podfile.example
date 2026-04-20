@@ -1,0 +1,8 @@
+platform :ios, '15.0'
+
+target 'DroneWatchDJISpike' do
+  use_frameworks!
+
+  # Direct iOS SDK path for Issue #2.
+  pod 'DJI-SDK-iOS', '~> 4.16.2'
+end

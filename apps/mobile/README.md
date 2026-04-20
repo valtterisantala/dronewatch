@@ -16,3 +16,11 @@ Responsibilities:
 
 This layer should remain vendor-agnostic.
 Drone-specific telemetry access belongs behind provider abstractions and native platform bridges.
+
+## Current spike app
+
+For Issue #2 (DJI POC 1/4), a narrow iOS bootstrap app lives in:
+
+- `apps/mobile/ios`
+
+It is intentionally limited to DJI connected-state confirmation and is not the full cross-platform product app.

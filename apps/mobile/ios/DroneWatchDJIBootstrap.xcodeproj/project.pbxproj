@@ -1,0 +1,405 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00479E652BE5BF2A132C217D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84208C0B38760D27A7199DB /* AppDelegate.swift */; };
+		4F497F272FA98D6960A07418 /* Pods_DroneWatchDJIBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E746A9B465A7062B0FFCB8F /* Pods_DroneWatchDJIBootstrap.framework */; };
+		5F7B3777FC96F389D80DC842 /* DroneWatchDJIBootstrapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */; };
+		793B09C545FFAFDDA6839C15 /* BootstrapCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */; };
+		D24727667C105B5F90F72E4C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E63C17A319D354267E4B347 /* ContentView.swift */; };
+		F09EE121B9B1CFCAEF59625A /* DJIDirectBootstrapProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8BE713E801D60243B4E3BCB /* DJIDirectBootstrapProbe.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		126F2A8D70E945861275CC52 /* Pods-DroneWatchDJIBootstrap.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DroneWatchDJIBootstrap.release.xcconfig"; path = "Target Support Files/Pods-DroneWatchDJIBootstrap/Pods-DroneWatchDJIBootstrap.release.xcconfig"; sourceTree = "<group>"; };
+		543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DroneWatchDJIBootstrap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneWatchDJIBootstrapApp.swift; sourceTree = "<group>"; };
+		7E746A9B465A7062B0FFCB8F /* Pods_DroneWatchDJIBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_DroneWatchDJIBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E63C17A319D354267E4B347 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C8BE713E801D60243B4E3BCB /* DJIDirectBootstrapProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DJIDirectBootstrapProbe.swift; sourceTree = "<group>"; };
+		D5A0788162C788C2BB7434A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		DB5282B1ED34F98026F5CD1E /* Pods-DroneWatchDJIBootstrap.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DroneWatchDJIBootstrap.debug.xcconfig"; path = "Target Support Files/Pods-DroneWatchDJIBootstrap/Pods-DroneWatchDJIBootstrap.debug.xcconfig"; sourceTree = "<group>"; };
+		E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootstrapCoordinator.swift; sourceTree = "<group>"; };
+		F84208C0B38760D27A7199DB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D00B73F730B8167E4F50D057 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F497F272FA98D6960A07418 /* Pods_DroneWatchDJIBootstrap.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0EC1DBFF6561F33E0364CA35 /* DroneWatchDJIBootstrap */ = {
+			isa = PBXGroup;
+			children = (
+				F84208C0B38760D27A7199DB /* AppDelegate.swift */,
+				E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */,
+				8E63C17A319D354267E4B347 /* ContentView.swift */,
+				5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */,
+				D5A0788162C788C2BB7434A0 /* Info.plist */,
+			);
+			path = DroneWatchDJIBootstrap;
+			sourceTree = "<group>";
+		};
+		7141F8B5048EF3701889A09F /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				C8BE713E801D60243B4E3BCB /* DJIDirectBootstrapProbe.swift */,
+			);
+			name = ios;
+			path = ../../../integrations/providers/dji/ios;
+			sourceTree = "<group>";
+		};
+		827FC977041012DAB50E6398 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7E746A9B465A7062B0FFCB8F /* Pods_DroneWatchDJIBootstrap.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9BB9B3EB5F8F3DA49CCD18E5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FB997A67DAB7A1579C4B7FC6 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				DB5282B1ED34F98026F5CD1E /* Pods-DroneWatchDJIBootstrap.debug.xcconfig */,
+				126F2A8D70E945861275CC52 /* Pods-DroneWatchDJIBootstrap.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		FDC8214B0525D3C6878F5C23 = {
+			isa = PBXGroup;
+			children = (
+				0EC1DBFF6561F33E0364CA35 /* DroneWatchDJIBootstrap */,
+				7141F8B5048EF3701889A09F /* ios */,
+				9BB9B3EB5F8F3DA49CCD18E5 /* Products */,
+				FB997A67DAB7A1579C4B7FC6 /* Pods */,
+				827FC977041012DAB50E6398 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9C6CBB0D4512BB5FF89949C7 /* DroneWatchDJIBootstrap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatchDJIBootstrap" */;
+			buildPhases = (
+				6F9283281DBA1FCA9A25BA35 /* [CP] Check Pods Manifest.lock */,
+				ED624C226A22A7447D4AA26C /* Sources */,
+				D00B73F730B8167E4F50D057 /* Frameworks */,
+				800AE4524C97C917BBC1009D /* [CP] Embed Pods Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DroneWatchDJIBootstrap;
+			productName = DroneWatchDJIBootstrap;
+			productReference = 543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6356BB2E1ABE8E488228DBE0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					9C6CBB0D4512BB5FF89949C7 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatchDJIBootstrap" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FDC8214B0525D3C6878F5C23;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9BB9B3EB5F8F3DA49CCD18E5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9C6CBB0D4512BB5FF89949C7 /* DroneWatchDJIBootstrap */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6F9283281DBA1FCA9A25BA35 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-DroneWatchDJIBootstrap-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		800AE4524C97C917BBC1009D /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-DroneWatchDJIBootstrap/Pods-DroneWatchDJIBootstrap-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-DroneWatchDJIBootstrap/Pods-DroneWatchDJIBootstrap-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-DroneWatchDJIBootstrap/Pods-DroneWatchDJIBootstrap-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ED624C226A22A7447D4AA26C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00479E652BE5BF2A132C217D /* AppDelegate.swift in Sources */,
+				793B09C545FFAFDDA6839C15 /* BootstrapCoordinator.swift in Sources */,
+				D24727667C105B5F90F72E4C /* ContentView.swift in Sources */,
+				F09EE121B9B1CFCAEF59625A /* DJIDirectBootstrapProbe.swift in Sources */,
+				5F7B3777FC96F389D80DC842 /* DroneWatchDJIBootstrapApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0544325E20F9A104E929BE5E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		CDA2FD948C2A42ACE44A849D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E5B5D9C0B380D3E046BC4AF0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 126F2A8D70E945861275CC52 /* Pods-DroneWatchDJIBootstrap.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P46W6C4NA9;
+				INFOPLIST_FILE = DroneWatchDJIBootstrap/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dronewatch;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FA98C83A9F116F2A0BC2C4C6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DB5282B1ED34F98026F5CD1E /* Pods-DroneWatchDJIBootstrap.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P46W6C4NA9;
+				INFOPLIST_FILE = DroneWatchDJIBootstrap/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dronewatch;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatchDJIBootstrap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0544325E20F9A104E929BE5E /* Debug */,
+				CDA2FD948C2A42ACE44A849D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatchDJIBootstrap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA98C83A9F116F2A0BC2C4C6 /* Debug */,
+				E5B5D9C0B380D3E046BC4AF0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6356BB2E1ABE8E488228DBE0 /* Project object */;
+}

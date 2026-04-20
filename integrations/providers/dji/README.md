@@ -27,3 +27,21 @@ The first POC is not:
 - multi-provider support
 
 It is the smallest useful proof that the DJI telemetry path works.
+
+## Current POC slice status
+
+The DJI POC is intentionally split into narrow issues.
+
+- **POC 1/4 (bootstrap + connected-state confirmation)** is implemented in:
+  - `integrations/providers/dji/bootstrap/run-bootstrap-check.sh`
+  - `integrations/providers/dji/bootstrap/README.md`
+  - `integrations/providers/dji/ios/DJIDirectBootstrapProbe.swift`
+  - `integrations/providers/dji/ios/README.md`
+- Direction for this slice is explicit:
+  - direct iOS DJI Mobile SDK path
+  - no dependency on deprecated iOS Bridge App path
+- **POC 2/4 (live telemetry read on connected aircraft)** is implemented in:
+  - `integrations/providers/dji/ios/DJIDirectBootstrapProbe.swift`
+  - `apps/mobile/ios/DroneWatchDJIBootstrap/ContentView.swift`
+  - `apps/mobile/ios/README.md`
+- Remaining POC slices should focus on telemetry normalization + backend/app integration.

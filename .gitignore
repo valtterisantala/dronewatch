@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+dist/
+build/
+.turbo/
+.pnpm-store/
+
+# Logs
+*.log
+
+# Env
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# Coverage
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+
+# Swift / Xcode
+DerivedData/
+*.xcworkspace
+xcuserdata/

@@ -21,7 +21,7 @@ The repo is intentionally structured as a monorepo with:
 - contracts
 - telemetry abstraction layer
 - provider integrations
-- integration surface for Adaptive UI CUAS
+- integration-ready read APIs and contracts for downstream consumers
 
 ## 2. Human roles
 
@@ -113,17 +113,16 @@ These source types must stay distinct in:
 - contracts
 - backend read models
 - UI semantics
-- Adaptive UI CUAS integration
+- downstream consumer integrations
 
-### Adaptive UI CUAS boundary
+### External integration boundary
 
-DroneWatch is the upstream producer.
-Adaptive UI CUAS is a downstream consumer.
+DroneWatch should expose versioned APIs and read models for downstream consumers.
 
-Integration should happen through versioned APIs and read models, not:
+External integrations should happen through explicit contracts, not:
 - shared database access
 - hidden internal coupling
-- direct import of product internals into CUAS
+- direct import of product internals into external systems
 
 ## 7. GitHub issue expectations
 

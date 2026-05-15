@@ -1,0 +1,13 @@
+{
+  "name": "@dronewatch/backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed:observation": "node scripts/seed-observation.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

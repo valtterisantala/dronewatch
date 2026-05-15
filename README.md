@@ -64,5 +64,6 @@ This repository begins with semantic foundation first:
 - architecture docs
 - integration boundary docs
 - key architectural decisions
+- git strategy for pivot execution (`docs/architecture/git-strategy.md`)
 
 Code scaffolding comes after those foundations are locked.

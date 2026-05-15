@@ -46,6 +46,7 @@ struct ContentView: View {
     private let primaryGreen = Color(red: 0.54, green: 0.95, blue: 0.37)
     private let acquiringYellow = Color(red: 1.0, green: 0.85, blue: 0.29)
     private let lostRed = Color(red: 1.0, green: 0.27, blue: 0.23)
+    private let recordRed = Color(red: 1.0, green: 0.18, blue: 0.16)
     private let inactiveBar = Color.white.opacity(0.16)
     private let whitePrimary = Color.white.opacity(0.96)
     private let whiteSecondary = Color.white.opacity(0.72)
@@ -74,14 +75,43 @@ struct ContentView: View {
     }
 
     private var captureScreen: some View {
-        ZStack {
-            CameraPreviewView(session: coordinator.cameraSession)
+        GeometryReader { proxy in
+            let topBandHeight = max(74, proxy.safeAreaInsets.top + 42)
+            let bottomBandHeight = min(max(268, proxy.size.height * 0.34), 318)
+            let viewportHeight = max(280, proxy.size.height - topBandHeight - bottomBandHeight)
+            let viewportSize = CGSize(width: proxy.size.width, height: viewportHeight)
+
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    topCameraBand
+                        .frame(height: topBandHeight)
+
+                    ZStack {
+                        CameraPreviewView(session: coordinator.cameraSession)
+                            .frame(width: proxy.size.width, height: viewportHeight)
+                            .clipped()
+
+                        LinearGradient(
+                            colors: [.black.opacity(0.12), .clear, .black.opacity(0.16)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+
+                        targetNominationLayer(size: viewportSize)
+                    }
+                    .frame(width: proxy.size.width, height: viewportHeight)
+
+                    bottomCameraBand
+                        .frame(height: bottomBandHeight)
+                }
                 .ignoresSafeArea()
 
-            if coordinator.state == .unavailable {
-                unavailableOverlay
-            } else {
-                captureOverlay
+                if coordinator.state == .unavailable {
+                    unavailableOverlay
+                }
             }
         }
         .background(Color.black)
@@ -93,32 +123,43 @@ struct ContentView: View {
         }
     }
 
-    private var captureOverlay: some View {
-        GeometryReader { proxy in
-            ZStack {
-                LinearGradient(
-                    colors: [.black.opacity(0.32), .clear, .black.opacity(0.5)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-
-                targetNominationLayer(size: proxy.size)
-
-                VStack(spacing: 0) {
-                    Spacer()
-                    stabilityPill
-                        .padding(.bottom, 16)
-                    captureControls
-                        .padding(.bottom, 14)
-                    bottomStatusCard
-                    bottomNavigationBar
-                        .padding(.top, 10)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 10)
+    private var topCameraBand: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("DroneWatch")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(whitePrimary)
+                Text(topStatusText)
+                    .font(.caption)
+                    .foregroundColor(statusAccent)
             }
+
+            Spacer()
+
+            Image(systemName: topStatusIcon)
+                .font(.headline.weight(.semibold))
+                .foregroundColor(statusAccent)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .background(Color.black)
+    }
+
+    private var bottomCameraBand: some View {
+        VStack(spacing: 12) {
+            stabilityPill
+
+            captureControls
+
+            bottomStatusCard
+
+            bottomNavigationBar
+                .padding(.top, -2)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .background(Color.black)
     }
 
     private func placeholderScreen(title: String, message: String, icon: String) -> some View {
@@ -259,12 +300,19 @@ struct ContentView: View {
                         Circle()
                             .stroke(Color.white.opacity(0.88), lineWidth: 4)
                             .frame(width: 76, height: 76)
-                        Circle()
-                            .fill(primaryButtonColor)
-                            .frame(width: 48, height: 48)
+                        if coordinator.canCompleteTracking {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(recordRed)
+                                .frame(width: 34, height: 34)
+                        } else {
+                            Circle()
+                                .fill(recordRed)
+                                .frame(width: 48, height: 48)
+                        }
                     }
                 }
                 .disabled(!coordinator.canStartTracking && !coordinator.canCompleteTracking)
+                .opacity((coordinator.canStartTracking || coordinator.canCompleteTracking) ? 1 : 0.42)
 
                 HStack(spacing: 6) {
                     Circle()
@@ -323,7 +371,9 @@ struct ContentView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .onLongPressGesture {
+            #if DEBUG
             cyclePreviewState()
+            #endif
         }
     }
 
@@ -357,9 +407,9 @@ struct ContentView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .opacity(selectedTab == .capture && coordinator.state == .tracking ? 0.68 : 1)
@@ -391,6 +441,9 @@ struct ContentView: View {
         }
         if coordinator.state == .complete {
             return .captureComplete
+        }
+        if coordinator.state == .targetLost {
+            return .targetLost
         }
         if coordinator.state == .tracking && coordinator.stabilityScore < 0.3 {
             return .targetLost
@@ -465,12 +518,8 @@ struct ContentView: View {
         case .almostDone, .captureComplete:
             return 5
         case .tracking:
-            return min(5, max(3, Int((coordinator.progress * 6).rounded())))
+            return min(5, max(2, Int((coordinator.stabilityScore * 6).rounded())))
         }
-    }
-
-    private var primaryButtonColor: Color {
-        visualState == .targetLost ? lostRed : primaryGreen
     }
 
     private var elapsedText: String {
@@ -485,6 +534,38 @@ struct ContentView: View {
             return "viewfinder"
         default:
             return "checkmark"
+        }
+    }
+
+    private var topStatusText: String {
+        switch visualState {
+        case .readyToTrack:
+            return "Ready"
+        case .targetNominated:
+            return "Target selected"
+        case .tracking:
+            return "Recording"
+        case .almostDone:
+            return "Nearly done"
+        case .targetLost:
+            return "Target lost"
+        case .captureComplete:
+            return "Saved"
+        }
+    }
+
+    private var topStatusIcon: String {
+        switch visualState {
+        case .readyToTrack:
+            return "viewfinder"
+        case .targetNominated:
+            return "scope"
+        case .tracking, .almostDone:
+            return "record.circle"
+        case .targetLost:
+            return "exclamationmark.triangle"
+        case .captureComplete:
+            return "checkmark.circle"
         }
     }
 

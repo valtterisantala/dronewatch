@@ -203,6 +203,28 @@ Likely iOS native responsibilities:
 
 iOS should expose normalized evidence events to the shared app core rather than leaking AVFoundation, Core Motion or Vision object types into shared product code.
 
+### iOS Tracking Spike Status
+
+Implemented: May 15, 2026
+
+The first iOS prototype spike uses AVFoundation frame access plus Vision object tracking after the user taps a target region in the camera viewport.
+
+What this spike currently proves:
+
+- the app can nominate a user-selected target area instead of running broad automatic detection
+- the camera frame stream can feed a native Vision tracker
+- the UI bounding box can be driven by tracker output rather than mock drift
+- low confidence or missing tracking output can transition the capture flow to `target_lost`
+- the Observation Package preview can include real bounding-box trace samples, confidence values and target-lost reason codes
+
+Known prototype limits:
+
+- tracking quality depends heavily on contrast, object size and camera motion
+- coordinate conversion currently assumes the portrait iOS camera viewport used by the prototype
+- reacquisition is not implemented yet; after target loss the user should reset or tap again
+- this does not classify the target as a drone, bird or aircraft
+- this is not a production-grade tracker and still needs field testing on a real flying object
+
 ## Android Implementation Implications
 
 Likely Android native responsibilities:

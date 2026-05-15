@@ -76,36 +76,24 @@ struct ContentView: View {
 
     private var captureScreen: some View {
         GeometryReader { proxy in
-            let topBandHeight = max(74, proxy.safeAreaInsets.top + 42)
-            let bottomBandHeight = min(max(268, proxy.size.height * 0.34), 318)
-            let viewportHeight = max(280, proxy.size.height - topBandHeight - bottomBandHeight)
-            let viewportSize = CGSize(width: proxy.size.width, height: viewportHeight)
-
             ZStack {
-                Color.black
+                CameraPreviewView(session: coordinator.cameraSession)
                     .ignoresSafeArea()
 
+                LinearGradient(
+                    colors: [.black.opacity(0.18), .clear, .black.opacity(0.58)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                targetNominationLayer(size: proxy.size)
+
                 VStack(spacing: 0) {
-                    topCameraBand
-                        .frame(height: topBandHeight)
-
-                    ZStack {
-                        CameraPreviewView(session: coordinator.cameraSession)
-                            .frame(width: proxy.size.width, height: viewportHeight)
-                            .clipped()
-
-                        LinearGradient(
-                            colors: [.black.opacity(0.12), .clear, .black.opacity(0.16)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-
-                        targetNominationLayer(size: viewportSize)
-                    }
-                    .frame(width: proxy.size.width, height: viewportHeight)
-
-                    bottomCameraBand
-                        .frame(height: bottomBandHeight)
+                    Spacer()
+                    captureBottomStack
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, max(8, proxy.safeAreaInsets.bottom + 2))
                 }
                 .ignoresSafeArea()
 
@@ -123,30 +111,8 @@ struct ContentView: View {
         }
     }
 
-    private var topCameraBand: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("DroneWatch")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(whitePrimary)
-                Text(topStatusText)
-                    .font(.caption)
-                    .foregroundColor(statusAccent)
-            }
-
-            Spacer()
-
-            Image(systemName: topStatusIcon)
-                .font(.headline.weight(.semibold))
-                .foregroundColor(statusAccent)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .background(Color.black)
-    }
-
-    private var bottomCameraBand: some View {
-        VStack(spacing: 12) {
+    private var captureBottomStack: some View {
+        VStack(spacing: 10) {
             stabilityPill
 
             captureControls
@@ -154,12 +120,7 @@ struct ContentView: View {
             bottomStatusCard
 
             bottomNavigationBar
-                .padding(.top, -2)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
-        .background(Color.black)
     }
 
     private func placeholderScreen(title: String, message: String, icon: String) -> some View {
@@ -534,38 +495,6 @@ struct ContentView: View {
             return "viewfinder"
         default:
             return "checkmark"
-        }
-    }
-
-    private var topStatusText: String {
-        switch visualState {
-        case .readyToTrack:
-            return "Ready"
-        case .targetNominated:
-            return "Target selected"
-        case .tracking:
-            return "Recording"
-        case .almostDone:
-            return "Nearly done"
-        case .targetLost:
-            return "Target lost"
-        case .captureComplete:
-            return "Saved"
-        }
-    }
-
-    private var topStatusIcon: String {
-        switch visualState {
-        case .readyToTrack:
-            return "viewfinder"
-        case .targetNominated:
-            return "scope"
-        case .tracking, .almostDone:
-            return "record.circle"
-        case .targetLost:
-            return "exclamationmark.triangle"
-        case .captureComplete:
-            return "checkmark.circle"
         }
     }
 

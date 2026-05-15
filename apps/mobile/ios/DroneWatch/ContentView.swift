@@ -1,5 +1,175 @@
 import AVFoundation
+import MapKit
 import SwiftUI
+
+private struct MapObservation: Identifiable {
+    let id: String
+    let coordinate: CLLocationCoordinate2D
+    let qualityTier: String
+    let qualityLabel: String
+    let observedAtText: String
+    let durationText: String
+    let headingDegrees: Double?
+    let headingText: String
+    let locationAccuracyText: String
+    let spatialUncertaintyMeters: Double?
+    let reasonSummary: [String]
+}
+
+private final class DroneWatchMapAnnotation: NSObject, MKAnnotation {
+    let observationId: String
+    let coordinate: CLLocationCoordinate2D
+    let title: String?
+    let subtitle: String?
+
+    init(observation: MapObservation) {
+        observationId = observation.id
+        coordinate = observation.coordinate
+        title = observation.qualityLabel
+        subtitle = observation.headingText
+    }
+}
+
+private struct ObservationMapView: UIViewRepresentable {
+    let observation: MapObservation
+    let accentColor: UIColor
+    @Binding var selectedObservationId: String?
+
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView(frame: .zero)
+        mapView.delegate = context.coordinator
+        mapView.pointOfInterestFilter = .excludingAll
+        mapView.showsCompass = true
+        mapView.showsScale = true
+        return mapView
+    }
+
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        context.coordinator.accentColor = accentColor
+        context.coordinator.observationId = observation.id
+        context.coordinator.selectedObservationId = $selectedObservationId
+
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.removeOverlays(mapView.overlays)
+
+        let annotation = DroneWatchMapAnnotation(observation: observation)
+        mapView.addAnnotation(annotation)
+
+        if let radius = observation.spatialUncertaintyMeters ?? accuracyRadius(from: observation.locationAccuracyText) {
+            mapView.addOverlay(MKCircle(center: observation.coordinate, radius: max(25, min(radius, 1200))))
+        }
+
+        if let heading = observation.headingDegrees {
+            let rayLength = max(180, min(observation.spatialUncertaintyMeters ?? 420, 900))
+            let endCoordinate = coordinate(
+                from: observation.coordinate,
+                bearingDegrees: heading,
+                distanceMeters: rayLength
+            )
+            mapView.addOverlay(MKPolyline(coordinates: [observation.coordinate, endCoordinate], count: 2))
+        }
+
+        let regionRadius = max(700, min((observation.spatialUncertaintyMeters ?? 350) * 4, 3000))
+        mapView.setRegion(
+            MKCoordinateRegion(
+                center: observation.coordinate,
+                latitudinalMeters: regionRadius,
+                longitudinalMeters: regionRadius
+            ),
+            animated: false
+        )
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selectedObservationId: $selectedObservationId, accentColor: accentColor, observationId: observation.id)
+    }
+
+    private func coordinate(
+        from coordinate: CLLocationCoordinate2D,
+        bearingDegrees: Double,
+        distanceMeters: Double
+    ) -> CLLocationCoordinate2D {
+        let earthRadius = 6_371_000.0
+        let bearing = bearingDegrees * .pi / 180
+        let latitude = coordinate.latitude * .pi / 180
+        let longitude = coordinate.longitude * .pi / 180
+        let angularDistance = distanceMeters / earthRadius
+
+        let destinationLatitude = asin(
+            sin(latitude) * cos(angularDistance) +
+                cos(latitude) * sin(angularDistance) * cos(bearing)
+        )
+        let destinationLongitude = longitude + atan2(
+            sin(bearing) * sin(angularDistance) * cos(latitude),
+            cos(angularDistance) - sin(latitude) * sin(destinationLatitude)
+        )
+
+        return CLLocationCoordinate2D(
+            latitude: destinationLatitude * 180 / .pi,
+            longitude: destinationLongitude * 180 / .pi
+        )
+    }
+
+    private func accuracyRadius(from text: String) -> Double? {
+        let digits = text.filter { $0.isNumber || $0 == "." }
+        return Double(digits)
+    }
+
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        var selectedObservationId: Binding<String?>
+        var accentColor: UIColor
+        var observationId: String
+
+        init(selectedObservationId: Binding<String?>, accentColor: UIColor, observationId: String) {
+            self.selectedObservationId = selectedObservationId
+            self.accentColor = accentColor
+            self.observationId = observationId
+        }
+
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            guard annotation is DroneWatchMapAnnotation else {
+                return nil
+            }
+
+            let identifier = "DroneWatchObservationMarker"
+            let view = (mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView) ??
+                MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view.annotation = annotation
+            view.markerTintColor = accentColor
+            view.glyphImage = UIImage(systemName: "viewfinder")
+            view.glyphTintColor = .black
+            view.canShowCallout = false
+            return view
+        }
+
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            guard let annotation = view.annotation as? DroneWatchMapAnnotation else {
+                return
+            }
+            selectedObservationId.wrappedValue = annotation.observationId
+        }
+
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let circle = overlay as? MKCircle {
+                let renderer = MKCircleRenderer(circle: circle)
+                renderer.fillColor = accentColor.withAlphaComponent(0.12)
+                renderer.strokeColor = accentColor.withAlphaComponent(0.32)
+                renderer.lineWidth = 1.5
+                return renderer
+            }
+
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(polyline: polyline)
+                renderer.strokeColor = accentColor.withAlphaComponent(0.76)
+                renderer.lineWidth = 4
+                renderer.lineCap = .round
+                return renderer
+            }
+
+            return MKOverlayRenderer(overlay: overlay)
+        }
+    }
+}
 
 struct ContentView: View {
     @ObservedObject var coordinator: GuidedCaptureCoordinator
@@ -9,6 +179,7 @@ struct ContentView: View {
     @State private var showTechnicalMetadata = false
     @State private var showRawPackage = false
     @State private var pinchStartZoom = 1.0
+    @State private var selectedMapObservationId: String?
 
     private enum AppTab: String, CaseIterable {
         case capture
@@ -61,11 +232,7 @@ struct ContentView: View {
             case .capture:
                 captureRoot
             case .map:
-                placeholderScreen(
-                    title: "Map",
-                    message: "Civilian awareness map will appear here.",
-                    icon: "map"
-                )
+                mapScreen
             case .profile:
                 placeholderScreen(
                     title: "Profile",
@@ -173,6 +340,165 @@ struct ContentView: View {
         .onAppear {
             previewStateOverride = nil
         }
+    }
+
+    private var mapScreen: some View {
+        ZStack {
+            if let observation = latestMapObservation {
+                ObservationMapView(
+                    observation: observation,
+                    accentColor: mapUIColor(for: observation.qualityTier),
+                    selectedObservationId: $selectedMapObservationId
+                )
+                .ignoresSafeArea()
+
+                LinearGradient(
+                    colors: [.black.opacity(0.38), .clear, .black.opacity(0.2)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    mapHeader(observation)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 18)
+
+                    Spacer()
+
+                    if selectedMapObservationId == observation.id {
+                        mapObservationCard(observation)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+                    } else {
+                        Text("Tap the marker for observation details")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(whiteSecondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(.regularMaterial, in: Capsule())
+                            .padding(.bottom, 12)
+                    }
+
+                    bottomNavigationBar
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
+                }
+            } else {
+                mapEmptyState
+            }
+        }
+        .background(Color.black)
+    }
+
+    private func mapHeader(_ observation: MapObservation) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "map")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(mapColor(for: observation.qualityTier))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Latest observation")
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(whitePrimary)
+                Text("\(observation.qualityLabel) • \(observation.observedAtText)")
+                    .font(.caption)
+                    .foregroundColor(whiteSecondary)
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private func mapObservationCard(_ observation: MapObservation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                reviewBadge(text: observation.qualityLabel, color: mapColor(for: observation.qualityTier))
+                Spacer()
+                Text(observation.observedAtText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(whiteSecondary)
+            }
+
+            HStack(spacing: 10) {
+                mapDetailChip(icon: "timer", title: observation.durationText)
+                mapDetailChip(icon: "location", title: observation.locationAccuracyText)
+                mapDetailChip(icon: "location.north.line", title: observation.headingText)
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(observation.reasonSummary.prefix(3), id: \.self) { reason in
+                    HStack(spacing: 8) {
+                        Image(systemName: reasonIcon(for: reason))
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(mapColor(for: observation.qualityTier))
+                            .frame(width: 16)
+                        Text(reason)
+                            .font(.caption)
+                            .foregroundColor(whitePrimary)
+                    }
+                }
+            }
+
+            Button("View details") {
+                selectedTab = .capture
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundColor(mapColor(for: observation.qualityTier))
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(mapColor(for: observation.qualityTier).opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func mapDetailChip(icon: String, title: String) -> some View {
+        Label(title, systemImage: icon)
+            .font(.caption.weight(.semibold))
+            .foregroundColor(whitePrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(Color.black.opacity(0.22), in: Capsule())
+    }
+
+    private var mapEmptyState: some View {
+        VStack(spacing: 14) {
+            Spacer()
+
+            Image(systemName: mapEmptyIcon)
+                .font(.system(size: 38, weight: .medium))
+                .foregroundColor(primaryGreen)
+            Text(mapEmptyTitle)
+                .font(.largeTitle.weight(.semibold))
+                .foregroundColor(whitePrimary)
+            Text(mapEmptyMessage)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundColor(whiteSecondary)
+                .padding(.horizontal, 36)
+
+            Spacer()
+
+            bottomNavigationBar
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+        }
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(red: 0.04, green: 0.07, blue: 0.08), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
     }
 
     private var reviewHeaderCard: some View {
@@ -742,6 +1068,75 @@ struct ContentView: View {
         }
 
         return dictionary
+    }
+
+    private var latestMapObservation: MapObservation? {
+        guard !packageDictionary.isEmpty,
+              let latitude = double(at: ["validationJoin", "observerLocation", "lat"]),
+              let longitude = double(at: ["validationJoin", "observerLocation", "lon"]) else {
+            return nil
+        }
+
+        let tier = reviewQualityTier
+        let heading = double(at: ["validationJoin", "roughBearingDegrees"]) ??
+            double(at: ["evidence", "motion", "bearingEstimate", "degrees"])
+        let accuracy = double(at: ["validationJoin", "observerLocation", "accuracyMeters"])
+        let spatialUncertainty = double(at: ["validationJoin", "spatialUncertaintyMeters"])
+        let reasons = readableReasonCodes.isEmpty ? ["Observation package generated for map review."] : readableReasonCodes
+
+        return MapObservation(
+            id: packageIdText,
+            coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+            qualityTier: tier,
+            qualityLabel: reviewQualityTitle,
+            observedAtText: reviewTimestampText,
+            durationText: durationText,
+            headingDegrees: heading,
+            headingText: heading.map { "\(Int($0.rounded())) deg" } ?? "Direction unavailable",
+            locationAccuracyText: accuracy.map { "\(Int($0.rounded())) m" } ?? "Location captured",
+            spatialUncertaintyMeters: spatialUncertainty,
+            reasonSummary: reasons
+        )
+    }
+
+    private var hasObservationPackage: Bool {
+        !packageDictionary.isEmpty
+    }
+
+    private var mapEmptyIcon: String {
+        hasObservationPackage ? "location.slash" : "map"
+    }
+
+    private var mapEmptyTitle: String {
+        hasObservationPackage ? "No location" : "No observations yet"
+    }
+
+    private var mapEmptyMessage: String {
+        hasObservationPackage ?
+            "Latest observation has no location, so it cannot be placed on the map." :
+            "Capture an observation to see it on the map."
+    }
+
+    private func mapColor(for tier: String) -> Color {
+        switch tier {
+        case "strong":
+            return primaryGreen
+        case "moderate":
+            return acquiringYellow
+        default:
+            return whiteSecondary
+        }
+    }
+
+    private func mapUIColor(for tier: String) -> UIColor {
+        switch tier {
+        case "strong":
+            return UIColor(red: 0.54, green: 0.95, blue: 0.37, alpha: 1)
+        case "moderate":
+            return UIColor(red: 1.0, green: 0.85, blue: 0.29, alpha: 1)
+        default:
+            return UIColor(white: 0.74, alpha: 1)
+        }
     }
 
     private var reviewQualityTier: String {

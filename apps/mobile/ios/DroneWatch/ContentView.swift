@@ -4,8 +4,23 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var coordinator: GuidedCaptureCoordinator
 
-    private let accentGreen = Color(red: 0.58, green: 0.96, blue: 0.39)
-    private let glassBlack = Color.black.opacity(0.58)
+    private enum CaptureVisualState {
+        case readyToTrack
+        case targetNominated
+        case tracking
+        case almostDone
+        case targetLost
+        case captureComplete
+    }
+
+    private let primaryGreen = Color(red: 0.54, green: 0.95, blue: 0.37)
+    private let acquiringYellow = Color(red: 1.0, green: 0.85, blue: 0.29)
+    private let lostRed = Color(red: 1.0, green: 0.27, blue: 0.23)
+    private let overlayBlack = Color.black.opacity(0.58)
+    private let deeperOverlay = Color.black.opacity(0.72)
+    private let inactiveBar = Color.white.opacity(0.16)
+    private let whitePrimary = Color.white.opacity(0.96)
+    private let whiteSecondary = Color.white.opacity(0.72)
 
     var body: some View {
         ZStack {
@@ -37,14 +52,12 @@ struct ContentView: View {
                 targetNominationLayer(size: proxy.size)
 
                 VStack(spacing: 0) {
-                    topGuidanceCard
-                        .padding(.top, 28)
                     Spacer()
                     stabilityCard
-                        .padding(.bottom, 28)
+                        .padding(.bottom, 22)
                     captureControls
                     bottomGuidanceCard
-                        .padding(.top, 20)
+                        .padding(.top, 18)
                 }
                 .padding(.horizontal, 22)
                 .padding(.bottom, 22)
@@ -55,28 +68,49 @@ struct ContentView: View {
     private func targetNominationLayer(size: CGSize) -> some View {
         ZStack {
             CrosshairView()
-                .stroke(Color.white.opacity(0.24), lineWidth: 1)
+                .stroke(Color.white.opacity(0.35), lineWidth: 1)
                 .ignoresSafeArea()
 
-            let box = coordinator.trackingBox ?? CGRect(x: 0.28, y: 0.36, width: 0.44, height: 0.26)
+            if visualState == .captureComplete {
+                VStack(spacing: 18) {
+                    ZStack {
+                        Circle()
+                            .stroke(targetAccent, lineWidth: 4)
+                            .frame(width: 118, height: 118)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 56, weight: .bold))
+                            .foregroundColor(targetAccent)
+                    }
+                    Text(centerHint)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .tracking(1.5)
+                        .foregroundColor(targetAccent)
+                    Text("Good observation captured.")
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(whitePrimary)
+                }
+                .position(x: size.width / 2, y: size.height * 0.34)
+            } else {
+                let box = displayBox
 
-            VStack(spacing: 8) {
-                Image(systemName: coordinator.state == .complete ? "checkmark" : "chevron.up")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(accentGreen)
-                Text(targetHint)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .tracking(1.8)
-                    .foregroundColor(accentGreen)
+                VStack(spacing: 7) {
+                    Image(systemName: visualState == .readyToTrack ? "plus" : "chevron.up")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(targetAccent)
+                    Text(centerHint)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .tracking(1.5)
+                        .foregroundColor(targetAccent)
+                }
+                .position(x: box.midX * size.width, y: max(84, box.minY * size.height - 42))
+
+                BoundingBoxView()
+                    .stroke(targetAccent, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    .frame(width: box.width * size.width, height: box.height * size.height)
+                    .position(x: box.midX * size.width, y: box.midY * size.height)
+                    .shadow(color: targetAccent.opacity(0.68), radius: 10)
+                    .animation(.easeInOut(duration: 0.18), value: box)
             }
-            .position(x: box.midX * size.width, y: max(92, box.minY * size.height - 48))
-
-            BoundingBoxView()
-                .stroke(accentGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                .frame(width: box.width * size.width, height: box.height * size.height)
-                .position(x: box.midX * size.width, y: box.midY * size.height)
-                .shadow(color: accentGreen.opacity(0.74), radius: 12)
-                .animation(.easeInOut(duration: 0.18), value: box)
         }
         .contentShape(Rectangle())
         .gesture(
@@ -91,43 +125,6 @@ struct ContentView: View {
         )
     }
 
-    private var topGuidanceCard: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .stroke(accentGreen.opacity(0.55), lineWidth: 1.5)
-                    .frame(width: 58, height: 58)
-                ReticleView()
-                    .stroke(accentGreen, lineWidth: 2)
-                    .frame(width: 38, height: 38)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("TRACK THE OBJECT")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .tracking(0.8)
-                    .foregroundColor(.white)
-                Text("Keep the object in the box")
-                    .font(.system(size: 17, weight: .regular, design: .rounded))
-                    .foregroundColor(.white.opacity(0.9))
-            }
-
-            Spacer(minLength: 10)
-
-            Image(systemName: "info.circle")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
-        }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .background(glassBlack)
-        .overlay(
-            RoundedRectangle(cornerRadius: 28)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-    }
-
     private var stabilityCard: some View {
         VStack(spacing: 14) {
             HStack(spacing: 14) {
@@ -137,26 +134,26 @@ struct ContentView: View {
 
                 Text("STABILITY")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(whitePrimary)
 
                 Spacer()
 
                 Text(stabilityLabel)
                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundColor(accentGreen)
+                    .foregroundColor(statusAccent)
             }
 
             HStack(spacing: 7) {
                 ForEach(0..<6, id: \.self) { index in
                     Capsule()
-                        .fill(index < filledStabilitySegments ? accentGreen : Color.white.opacity(0.12))
+                        .fill(index < filledStabilitySegments ? statusAccent : inactiveBar)
                         .frame(height: 8)
                 }
             }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 18)
-        .background(glassBlack)
+        .background(overlayBlack)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
@@ -186,7 +183,7 @@ struct ContentView: View {
 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(coordinator.state == .tracking ? Color.red : accentGreen)
+                        .fill(statusAccent)
                         .frame(width: 10, height: 10)
                     Text(elapsedText)
                         .font(.system(size: 18, weight: .medium, design: .rounded))
@@ -206,7 +203,7 @@ struct ContentView: View {
         HStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(accentGreen)
+                    .fill(statusAccent)
                     .frame(width: 58, height: 58)
                 Image(systemName: bottomIcon)
                     .font(.system(size: 26, weight: .bold))
@@ -217,31 +214,31 @@ struct ContentView: View {
                 Text(bottomTitle)
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .tracking(0.4)
-                    .foregroundColor(.white)
+                    .foregroundColor(whitePrimary)
                 Text(bottomMessage)
                     .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .foregroundColor(.white.opacity(0.78))
+                    .foregroundColor(whiteSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 10)
 
-            Button(action: {
-                coordinator.cancelTracking()
-            }) {
-                Text(coordinator.state == .tracking ? "CANCEL" : "RESET")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.82))
+            if let bottomActionTitle {
+                Button(action: bottomAction) {
+                    Text(bottomActionTitle)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(visualState == .captureComplete ? primaryGreen : whitePrimary)
+                }
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
-        .background(Color.black.opacity(0.68))
+        .background(deeperOverlay)
         .overlay(
-            RoundedRectangle(cornerRadius: 26)
+            RoundedRectangle(cornerRadius: 32)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 26))
+        .clipShape(RoundedRectangle(cornerRadius: 32))
     }
 
     private var unavailableOverlay: some View {
@@ -255,49 +252,102 @@ struct ContentView: View {
                 coordinator.startPreview()
             }
             .buttonStyle(.borderedProminent)
-            .tint(accentGreen)
+            .tint(primaryGreen)
         }
         .foregroundColor(.white)
         .padding(24)
-        .background(glassBlack)
+        .background(deeperOverlay)
         .clipShape(RoundedRectangle(cornerRadius: 28))
         .padding(22)
     }
 
-    private var targetHint: String {
-        switch coordinator.state {
-        case .complete:
-            return "CAPTURED"
-        case .tracking:
-            return "KEEP STEADY"
+    private var visualState: CaptureVisualState {
+        if coordinator.state == .complete {
+            return .captureComplete
+        }
+        if coordinator.state == .tracking && coordinator.stabilityScore < 0.3 {
+            return .targetLost
+        }
+        if coordinator.state == .tracking && coordinator.progress >= 0.78 {
+            return .almostDone
+        }
+        if coordinator.state == .tracking {
+            return .tracking
+        }
+        if coordinator.trackingBox != nil {
+            return .targetNominated
+        }
+        return .readyToTrack
+    }
+
+    private var displayBox: CGRect {
+        coordinator.trackingBox ?? CGRect(x: 0.29, y: 0.34, width: 0.42, height: 0.25)
+    }
+
+    private var targetAccent: Color {
+        visualState == .targetLost ? lostRed : primaryGreen
+    }
+
+    private var statusAccent: Color {
+        switch visualState {
+        case .targetNominated:
+            return acquiringYellow
+        case .targetLost:
+            return lostRed
         default:
+            return primaryGreen
+        }
+    }
+
+    private var centerHint: String {
+        switch visualState {
+        case .readyToTrack:
             return "TAP TARGET"
+        case .targetNominated:
+            return "HOLD STEADY"
+        case .tracking, .almostDone:
+            return "KEEP STEADY"
+        case .targetLost:
+            return "FIND TARGET"
+        case .captureComplete:
+            return "COMPLETED"
         }
     }
 
     private var stabilityLabel: String {
-        if coordinator.state == .complete {
-            return "DONE"
-        }
-        if coordinator.stabilityScore >= 0.72 || coordinator.progress >= 0.45 {
+        switch visualState {
+        case .readyToTrack:
+            return "READY"
+        case .targetNominated:
+            return "ACQUIRING"
+        case .targetLost:
+            return "POOR"
+        case .tracking, .almostDone, .captureComplete:
             return "GOOD"
         }
-        return "READY"
     }
 
     private var filledStabilitySegments: Int {
-        let value = max(coordinator.progress, coordinator.stabilityScore)
-        return min(6, max(1, Int((value * 6).rounded())))
+        switch visualState {
+        case .readyToTrack:
+            return 0
+        case .targetNominated:
+            return 4
+        case .targetLost:
+            return 1
+        case .almostDone, .captureComplete:
+            return 5
+        case .tracking:
+            return min(5, max(3, Int((coordinator.progress * 6).rounded())))
+        }
     }
 
     private var primaryButtonColor: Color {
-        switch coordinator.state {
-        case .tracking:
-            return Color.red
-        case .complete:
-            return accentGreen
+        switch visualState {
+        case .targetLost:
+            return lostRed
         default:
-            return Color.red.opacity(0.92)
+            return primaryGreen
         }
     }
 
@@ -308,29 +358,66 @@ struct ContentView: View {
     }
 
     private var bottomIcon: String {
-        coordinator.state == .complete ? "checkmark" : "checkmark"
+        switch visualState {
+        case .readyToTrack:
+            return "scope"
+        case .targetLost:
+            return "scope"
+        default:
+            return "checkmark"
+        }
     }
 
     private var bottomTitle: String {
-        switch coordinator.state {
-        case .complete:
-            return "PACKAGE READY"
+        switch visualState {
+        case .readyToTrack:
+            return "READY TO TRACK"
+        case .targetNominated:
+            return "TRACKING STARTED"
         case .tracking:
             return "GOOD TRACKING"
-        default:
-            return "READY TO TRACK"
+        case .almostDone:
+            return "ALMOST THERE"
+        case .targetLost:
+            return "TARGET LOST"
+        case .captureComplete:
+            return "CAPTURE SAVED"
         }
     }
 
     private var bottomMessage: String {
-        switch coordinator.state {
-        case .complete:
-            return "Observation evidence has been captured."
+        switch visualState {
+        case .readyToTrack:
+            return "Tap the object, then start tracking."
+        case .targetNominated:
+            return "Keep the object in the box and try to hold steady."
         case .tracking:
             return "Keep tracking for a few more seconds."
-        default:
-            return "Tap the object, then start tracking."
+        case .almostDone:
+            return "Just a little more."
+        case .targetLost:
+            return "Find the object and put it back in the box."
+        case .captureComplete:
+            return "You can review your capture or start a new one."
         }
+    }
+
+    private var bottomActionTitle: String? {
+        switch visualState {
+        case .readyToTrack, .targetLost:
+            return "RESET"
+        case .captureComplete:
+            return "VIEW"
+        default:
+            return nil
+        }
+    }
+
+    private func bottomAction() {
+        if visualState == .captureComplete {
+            return
+        }
+        coordinator.cancelTracking()
     }
 
     private func primaryCaptureAction() {
@@ -350,11 +437,11 @@ struct ContentView: View {
                     .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 1))
                 Image(systemName: icon)
                     .font(.system(size: 25, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(whitePrimary)
             }
             Text(label)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.86))
+                .foregroundColor(whitePrimary)
         }
     }
 }

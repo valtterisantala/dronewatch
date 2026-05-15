@@ -2,6 +2,10 @@
 
 This is the first iOS prototype path for guided civilian observation capture.
 
+Official domain: `dronewatch.fi`
+
+iOS bundle identifier: `fi.dronewatch`
+
 It supports GitHub issue #9:
 
 - opens a camera-first capture screen
@@ -30,12 +34,10 @@ The simulator can build the app, but camera preview requires a real device.
 Open the Xcode project:
 
 ```bash
-open DroneWatchDJIBootstrap.xcodeproj
+open DroneWatch.xcodeproj
 ```
 
 Select an iPhone target and run.
-
-The target name still contains `DroneWatchDJIBootstrap` from the parked spike lineage. The active app behavior is the guided-capture prototype.
 
 ## Test Flow
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DroneWatchDJIBootstrapApp: App {
+struct DroneWatchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var coordinator = GuidedCaptureCoordinator()
 

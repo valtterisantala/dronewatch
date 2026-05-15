@@ -2,6 +2,12 @@
 
 This folder contains the DroneWatch mobile product.
 
+Official domain: `dronewatch.fi`
+
+App/package identifier: `fi.dronewatch`
+
+Future Android scaffolding should use the same value for `applicationId` / package name.
+
 ## Active prototype direction
 
 The active prototype path is guided civilian observation capture:

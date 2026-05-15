@@ -1,4 +1,4 @@
-name: DroneWatchDJIBootstrap
+name: DroneWatch
 
 options:
   minimumXcodeGenVersion: 2.40.0
@@ -6,16 +6,16 @@ options:
     iOS: "15.0"
 
 targets:
-  DroneWatchDJIBootstrap:
+  DroneWatch:
     type: application
     platform: iOS
     deploymentTarget: "15.0"
     sources:
-      - path: DroneWatchDJIBootstrap
+      - path: DroneWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dronewatch
-        INFOPLIST_FILE: DroneWatchDJIBootstrap/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: fi.dronewatch
+        INFOPLIST_FILE: DroneWatch/Info.plist
         SWIFT_VERSION: 5.0
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0

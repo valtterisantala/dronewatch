@@ -8,14 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		00479E652BE5BF2A132C217D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84208C0B38760D27A7199DB /* AppDelegate.swift */; };
-		5F7B3777FC96F389D80DC842 /* DroneWatchDJIBootstrapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */; };
+		5F7B3777FC96F389D80DC842 /* DroneWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchApp.swift */; };
 		793B09C545FFAFDDA6839C15 /* BootstrapCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */; };
 		D24727667C105B5F90F72E4C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E63C17A319D354267E4B347 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DroneWatchDJIBootstrap.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneWatchDJIBootstrapApp.swift; sourceTree = "<group>"; };
+		543787AC8AB70994DFFC9D99 /* DroneWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DroneWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneWatchApp.swift; sourceTree = "<group>"; };
 		8E63C17A319D354267E4B347 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D5A0788162C788C2BB7434A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootstrapCoordinator.swift; sourceTree = "<group>"; };
@@ -33,16 +33,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0EC1DBFF6561F33E0364CA35 /* DroneWatchDJIBootstrap */ = {
+		0EC1DBFF6561F33E0364CA35 /* DroneWatch */ = {
 			isa = PBXGroup;
 			children = (
 				F84208C0B38760D27A7199DB /* AppDelegate.swift */,
 				E70552AA7F2B4A512D7571AA /* BootstrapCoordinator.swift */,
 				8E63C17A319D354267E4B347 /* ContentView.swift */,
-				5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchDJIBootstrapApp.swift */,
+				5794B5A6BFEE7F3D79FEA3A5 /* DroneWatchApp.swift */,
 				D5A0788162C788C2BB7434A0 /* Info.plist */,
 			);
-			path = DroneWatchDJIBootstrap;
+			path = DroneWatch;
 			sourceTree = "<group>";
 		};
 		827FC977041012DAB50E6398 /* Frameworks */ = {
@@ -55,7 +55,7 @@
 		9BB9B3EB5F8F3DA49CCD18E5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */,
+				543787AC8AB70994DFFC9D99 /* DroneWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -63,7 +63,7 @@
 		FDC8214B0525D3C6878F5C23 = {
 			isa = PBXGroup;
 			children = (
-				0EC1DBFF6561F33E0364CA35 /* DroneWatchDJIBootstrap */,
+				0EC1DBFF6561F33E0364CA35 /* DroneWatch */,
 				9BB9B3EB5F8F3DA49CCD18E5 /* Products */,
 				827FC977041012DAB50E6398 /* Frameworks */,
 			);
@@ -72,9 +72,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		9C6CBB0D4512BB5FF89949C7 /* DroneWatchDJIBootstrap */ = {
+		9C6CBB0D4512BB5FF89949C7 /* DroneWatch */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatchDJIBootstrap" */;
+			buildConfigurationList = EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatch" */;
 			buildPhases = (
 				ED624C226A22A7447D4AA26C /* Sources */,
 				D00B73F730B8167E4F50D057 /* Frameworks */,
@@ -83,9 +83,9 @@
 			);
 			dependencies = (
 			);
-			name = DroneWatchDJIBootstrap;
-			productName = DroneWatchDJIBootstrap;
-			productReference = 543787AC8AB70994DFFC9D99 /* DroneWatchDJIBootstrap.app */;
+			name = DroneWatch;
+			productName = DroneWatch;
+			productReference = 543787AC8AB70994DFFC9D99 /* DroneWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -102,7 +102,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatchDJIBootstrap" */;
+			buildConfigurationList = 9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatch" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -116,7 +116,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9C6CBB0D4512BB5FF89949C7 /* DroneWatchDJIBootstrap */,
+				9C6CBB0D4512BB5FF89949C7 /* DroneWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -129,7 +129,7 @@
 				00479E652BE5BF2A132C217D /* AppDelegate.swift in Sources */,
 				793B09C545FFAFDDA6839C15 /* BootstrapCoordinator.swift in Sources */,
 				D24727667C105B5F90F72E4C /* ContentView.swift in Sources */,
-				5F7B3777FC96F389D80DC842 /* DroneWatchDJIBootstrapApp.swift in Sources */,
+				5F7B3777FC96F389D80DC842 /* DroneWatchApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,14 +263,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P46W6C4NA9;
-				INFOPLIST_FILE = DroneWatchDJIBootstrap/Info.plist;
+				INFOPLIST_FILE = DroneWatch/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = dronewatch;
+				PRODUCT_BUNDLE_IDENTIFIER = fi.dronewatch;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -285,14 +285,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P46W6C4NA9;
-				INFOPLIST_FILE = DroneWatchDJIBootstrap/Info.plist;
+				INFOPLIST_FILE = DroneWatch/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = dronewatch;
+				PRODUCT_BUNDLE_IDENTIFIER = fi.dronewatch;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -302,7 +302,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatchDJIBootstrap" */ = {
+		9F830545D33B886F01A662CA /* Build configuration list for PBXProject "DroneWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0544325E20F9A104E929BE5E /* Debug */,
@@ -311,7 +311,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatchDJIBootstrap" */ = {
+		EFB72282B10984760AE4E9EF /* Build configuration list for PBXNativeTarget "DroneWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FA98C83A9F116F2A0BC2C4C6 /* Debug */,

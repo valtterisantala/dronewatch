@@ -2,6 +2,10 @@
 
 DroneWatch is a cross-platform mobile product for shared drone awareness.
 
+Official domain: `dronewatch.fi`
+
+Official app/package identifier: `fi.dronewatch`
+
 It combines three core modes:
 
 - **Report** — civilians can quickly report a possible drone sighting

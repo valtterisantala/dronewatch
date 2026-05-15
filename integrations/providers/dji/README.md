@@ -42,6 +42,6 @@ The DJI POC is intentionally split into narrow issues.
   - no dependency on deprecated iOS Bridge App path
 - **POC 2/4 (live telemetry read on connected aircraft)** is implemented in:
   - `integrations/providers/dji/ios/DJIDirectBootstrapProbe.swift`
-  - `apps/mobile/ios/DroneWatchDJIBootstrap/ContentView.swift`
+  - archived spike UI code from the former `apps/mobile/ios/DroneWatchDJIBootstrap` app path
   - `apps/mobile/ios/README.md`
 - Remaining POC slices should focus on telemetry normalization + backend/app integration.

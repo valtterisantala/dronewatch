@@ -428,8 +428,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     }
 
     private func box(around point: CGPoint) -> CGRect {
-        let width = 0.28
-        let height = 0.18
+        let width = 0.44
+        let height = 0.26
         let x = min(max(point.x - width / 2, 0.03), 1 - width - 0.03)
         let y = min(max(point.y - height / 2, 0.08), 1 - height - 0.08)
         return CGRect(x: x, y: y, width: width, height: height)

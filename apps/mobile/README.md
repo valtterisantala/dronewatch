@@ -1,26 +1,21 @@
 # apps/mobile
 
-This folder contains the DroneWatch cross-platform mobile product.
+This folder contains the DroneWatch mobile product.
 
-Core user-facing modes:
-- Report
-- Map
-- Fly
+## Active prototype direction
 
-Responsibilities:
-- shared mobile UI and navigation
-- shared app state
-- backend API client
-- map presentation
-- drone registration and flight session UX
+The active prototype path is guided civilian observation capture:
 
-This layer should remain vendor-agnostic.
-Drone-specific telemetry access belongs behind provider abstractions and native platform bridges.
+- camera-first capture
+- target nomination / tracking guidance
+- local evidence summary generation
+- Observation Package v1 alignment
+- later backend ingest and map visualization
 
-## Current spike app
-
-For Issue #2 (DJI POC 1/4), a narrow iOS bootstrap app lives in:
+The current iOS prototype lives in:
 
 - `apps/mobile/ios`
 
-It is intentionally limited to DJI connected-state confirmation and is not the full cross-platform product app.
+## Parked work
+
+Earlier DJI/provider spike work is parked research. Do not continue provider, Mavic, hobby registration or cooperative drone-operator features from this folder unless a later issue explicitly reactivates that scope.

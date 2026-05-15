@@ -12,7 +12,6 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - path: DroneWatchDJIBootstrap
-      - path: ../../../integrations/providers/dji/ios/DJIDirectBootstrapProbe.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dronewatch

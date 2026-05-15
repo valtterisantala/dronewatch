@@ -3,6 +3,35 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var coordinator: GuidedCaptureCoordinator
+    @State private var selectedTab: AppTab = .capture
+
+    private enum AppTab: String, CaseIterable {
+        case capture
+        case map
+        case profile
+
+        var title: String {
+            switch self {
+            case .capture:
+                return "Capture"
+            case .map:
+                return "Map"
+            case .profile:
+                return "Profile"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .capture:
+                return "viewfinder"
+            case .map:
+                return "map"
+            case .profile:
+                return "person.crop.circle"
+            }
+        }
+    }
 
     private enum CaptureVisualState {
         case readyToTrack
@@ -23,6 +52,28 @@ struct ContentView: View {
     private let whiteSecondary = Color.white.opacity(0.72)
 
     var body: some View {
+        Group {
+            switch selectedTab {
+            case .capture:
+                captureScreen
+            case .map:
+                placeholderScreen(
+                    title: "Map",
+                    message: "Civilian awareness map will appear here.",
+                    icon: "map"
+                )
+            case .profile:
+                placeholderScreen(
+                    title: "Profile",
+                    message: "Your capture history and preferences will appear here.",
+                    icon: "person.crop.circle"
+                )
+            }
+        }
+        .background(Color.black)
+    }
+
+    private var captureScreen: some View {
         ZStack {
             CameraPreviewView(session: coordinator.cameraSession)
                 .ignoresSafeArea()
@@ -58,9 +109,44 @@ struct ContentView: View {
                     captureControls
                     bottomGuidanceCard
                         .padding(.top, 18)
+                    bottomNavigationBar
+                        .padding(.top, 12)
                 }
                 .padding(.horizontal, 22)
-                .padding(.bottom, 22)
+                .padding(.bottom, 12)
+            }
+        }
+    }
+
+    private func placeholderScreen(title: String, message: String, icon: String) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.black, Color(red: 0.04, green: 0.07, blue: 0.08), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 18) {
+                Spacer()
+
+                Image(systemName: icon)
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundColor(primaryGreen)
+                Text(title)
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundColor(whitePrimary)
+                Text(message)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(whiteSecondary)
+                    .padding(.horizontal, 36)
+
+                Spacer()
+
+                bottomNavigationBar
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 12)
             }
         }
     }
@@ -443,6 +529,39 @@ struct ContentView: View {
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundColor(whitePrimary)
         }
+    }
+
+    private var bottomNavigationBar: some View {
+        HStack(spacing: 6) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                Button(action: {
+                    selectedTab = tab
+                }) {
+                    VStack(spacing: 5) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(tab.title)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(selectedTab == tab ? primaryGreen : whiteSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(selectedTab == tab ? Color.white.opacity(0.08) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(6)
+        .background((selectedTab == .capture && coordinator.state == .tracking) ? Color.black.opacity(0.42) : overlayBlack)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .opacity(selectedTab == .capture && coordinator.state == .tracking ? 0.76 : 1)
     }
 }
 

@@ -137,6 +137,9 @@
         "motion": {
           "$ref": "#/$defs/motion"
         },
+        "camera": {
+          "$ref": "#/$defs/camera"
+        },
         "audio": {
           "$ref": "#/$defs/audio"
         }
@@ -461,6 +464,113 @@
         }
       }
     },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cameraDevice", "cameraSummary", "zoomTrace"],
+      "properties": {
+        "cameraDevice": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["position", "lensClass", "physicalLensSwitchingSupported"],
+          "properties": {
+            "position": {
+              "type": "string",
+              "enum": ["back", "front", "unknown"]
+            },
+            "lensClass": {
+              "type": "string",
+              "enum": ["wide", "telephoto", "digital_fallback", "unknown"]
+            },
+            "physicalLensSwitchingSupported": {
+              "type": "boolean"
+            }
+          }
+        },
+        "cameraSummary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minZoomFactor",
+            "maxZoomFactor",
+            "finalZoomFactor",
+            "lensSwitchCount",
+            "usedPhysicalLensSwitching",
+            "usedDigitalFallback"
+          ],
+          "properties": {
+            "minZoomFactor": {
+              "type": "number",
+              "minimum": 1
+            },
+            "maxZoomFactor": {
+              "type": "number",
+              "minimum": 1
+            },
+            "finalZoomFactor": {
+              "type": "number",
+              "minimum": 1
+            },
+            "lensSwitchCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "usedPhysicalLensSwitching": {
+              "type": "boolean"
+            },
+            "usedDigitalFallback": {
+              "type": "boolean"
+            }
+          }
+        },
+        "zoomTrace": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/zoomSample"
+          }
+        }
+      }
+    },
+    "zoomSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp",
+        "effectiveZoomFactor",
+        "requestedZoomFactor",
+        "lensClass",
+        "digitalZoomFactor",
+        "digitalFallback"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effectiveZoomFactor": {
+          "type": "number",
+          "minimum": 1
+        },
+        "requestedZoomFactor": {
+          "type": "number",
+          "minimum": 1
+        },
+        "lensClass": {
+          "type": "string",
+          "enum": ["wide", "telephoto", "digital_fallback", "unknown"]
+        },
+        "digitalZoomFactor": {
+          "type": "number",
+          "minimum": 1
+        },
+        "digitalFallback": {
+          "type": "boolean"
+        },
+        "preset": {
+          "type": "string"
+        }
+      }
+    },
     "derivedEvidence": {
       "type": "object",
       "additionalProperties": false,
@@ -566,6 +676,9 @@
           ],
           "properties": {
             "hasBoundingBoxTrace": {
+              "type": "boolean"
+            },
+            "hasCameraZoomTrace": {
               "type": "boolean"
             },
             "hasDevicePoseTrace": {

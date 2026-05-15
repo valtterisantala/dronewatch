@@ -37,7 +37,7 @@
           "timestamp": "2026-05-15T13:42:22Z",
           "box": {
             "x": 0.35,
-            "y": 0.40,
+            "y": 0.4,
             "width": 0.03,
             "height": 0.02
           },
@@ -46,7 +46,7 @@
         {
           "timestamp": "2026-05-15T13:42:30Z",
           "box": {
-            "x": 0.40,
+            "x": 0.4,
             "y": 0.39,
             "width": 0.03,
             "height": 0.02
@@ -81,6 +81,41 @@
         "headingStabilityScore": 0.72,
         "motionSmoothnessScore": 0.74
       }
+    },
+    "camera": {
+      "cameraDevice": {
+        "position": "back",
+        "lensClass": "wide",
+        "physicalLensSwitchingSupported": true
+      },
+      "cameraSummary": {
+        "minZoomFactor": 1,
+        "maxZoomFactor": 2,
+        "finalZoomFactor": 2,
+        "lensSwitchCount": 0,
+        "usedPhysicalLensSwitching": false,
+        "usedDigitalFallback": false
+      },
+      "zoomTrace": [
+        {
+          "timestamp": "2026-05-15T13:42:20Z",
+          "effectiveZoomFactor": 1,
+          "requestedZoomFactor": 1,
+          "lensClass": "wide",
+          "digitalZoomFactor": 1,
+          "digitalFallback": false,
+          "preset": "1x"
+        },
+        {
+          "timestamp": "2026-05-15T13:42:31Z",
+          "effectiveZoomFactor": 2,
+          "requestedZoomFactor": 2,
+          "lensClass": "wide",
+          "digitalZoomFactor": 2,
+          "digitalFallback": false,
+          "preset": "2x"
+        }
+      ]
     }
   },
   "derivedEvidence": {
@@ -103,7 +138,8 @@
       "hasBoundingBoxTrace": true,
       "hasDevicePoseTrace": true,
       "hasObserverLocation": true,
-      "hasAudioFeatures": false
+      "hasAudioFeatures": false,
+      "hasCameraZoomTrace": true
     },
     "mlReadiness": "partial",
     "compactFeatureSummary": {

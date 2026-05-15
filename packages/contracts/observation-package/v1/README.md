@@ -77,6 +77,16 @@ Each bounding-box trace point includes timestamp, normalized bounding box, and o
 
 This layer supports deterministic quality scoring and later map visualization without pretending to be aircraft telemetry.
 
+### Camera and zoom layer
+
+`evidence.camera` is optional. When present, it contains camera-framing context:
+
+- `cameraDevice`
+- `cameraSummary`
+- `zoomTrace`
+
+This layer captures how the phone camera was used while framing and tracking the object. Zoom samples can include effective zoom factor, requested zoom factor, physical lens class, digital zoom factor, digital fallback status, and optional preset label. This is camera evidence only; it does not identify or classify the observed object.
+
 ### Optional audio-derived layer
 
 `evidence.audio` is optional. When present, it can contain:
@@ -121,6 +131,7 @@ Required fields identify the package, preserve source semantics, and provide eno
 
 Optional fields are allowed when the app cannot capture them reliably, especially:
 
+- camera zoom evidence
 - audio evidence
 - observer note
 - exact coordinates

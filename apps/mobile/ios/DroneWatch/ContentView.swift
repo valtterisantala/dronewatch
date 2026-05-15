@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var saveAcknowledged = false
     @State private var showTechnicalMetadata = false
     @State private var showRawPackage = false
+    @State private var pinchStartZoom = 1.0
 
     private enum AppTab: String, CaseIterable {
         case capture
@@ -116,6 +117,7 @@ struct ContentView: View {
         }
         .background(Color.black)
         .onAppear {
+            pinchStartZoom = coordinator.zoomFactor
             coordinator.startPreview()
         }
         .onChange(of: coordinator.state) { _ in
@@ -126,6 +128,8 @@ struct ContentView: View {
     private var captureBottomStack: some View {
         VStack(spacing: 14) {
             stabilityPill
+
+            zoomPresetControl
 
             captureControls
 
@@ -217,6 +221,8 @@ struct ContentView: View {
                 reviewMetric("Location", locationAccuracyText, "location")
                 reviewMetric("Tracking", percentText(motionStability), "waveform.path.ecg")
                 reviewMetric("Motion", motionConsistencyText, "gyroscope")
+                reviewMetric("Zoom", finalZoomText, "plus.magnifyingglass")
+                reviewMetric("Lens", lensClassText, "camera.aperture")
             }
         }
     }
@@ -227,6 +233,8 @@ struct ContentView: View {
                 evidenceRow("Bounding box trace", isAvailable: boundingBoxTraceCount > 0, detail: "\(boundingBoxTraceCount) samples")
                 evidenceRow("Device pose trace", isAvailable: devicePoseTraceCount > 0, detail: "\(devicePoseTraceCount) samples")
                 evidenceRow("Location", isAvailable: locationCaptured, detail: locationStatusText)
+                evidenceRow("Camera zoom", isAvailable: zoomTraceCount > 0, detail: "\(zoomTraceCount) samples")
+                evidenceRow("Lens switches", isAvailable: lensSwitchCount > 0, detail: "\(lensSwitchCount)")
                 evidenceRow("Audio features", isAvailable: audioFeaturesCaptured, detail: audioFeaturesCaptured ? "Captured" : "Not captured")
                 evidenceRow("Target lost events", isAvailable: targetLostEventCount == 0, detail: "\(targetLostEventCount)")
                 evidenceRow("Reacquisition events", isAvailable: reacquisitionEventCount > 0, detail: "\(reacquisitionEventCount)")
@@ -262,6 +270,8 @@ struct ContentView: View {
                     metadataRow("Schema", schemaVersionText)
                     metadataRow("Platform", appPlatformText)
                     metadataRow("App version", appVersionText)
+                    metadataRow("Camera lens", lensClassText)
+                    metadataRow("Final zoom", finalZoomText)
                     metadataRow("Created", createdAtText)
                     metadataRow("Started", startedAtText)
                     metadataRow("Ended", endedAtText)
@@ -425,6 +435,16 @@ struct ContentView: View {
                     coordinator.nominateTarget(at: normalized)
                 }
         )
+        .simultaneousGesture(
+            MagnificationGesture()
+                .onChanged { value in
+                    let nextZoom = pinchStartZoom * Double(value)
+                    coordinator.setZoomFactor(nextZoom)
+                }
+                .onEnded { _ in
+                    pinchStartZoom = coordinator.zoomFactor
+                }
+        )
     }
 
     private var stabilityPill: some View {
@@ -455,6 +475,33 @@ struct ContentView: View {
             cyclePreviewState()
             #endif
         }
+    }
+
+    private var zoomPresetControl: some View {
+        HStack(spacing: 10) {
+            ForEach(coordinator.availableZoomPresets, id: \.self) { preset in
+                Button(action: {
+                    pinchStartZoom = preset
+                    coordinator.setZoomPreset(preset)
+                }) {
+                    Text("\(zoomLabel(preset))x")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(isZoomPresetActive(preset) ? .black : whitePrimary)
+                        .frame(minWidth: 42)
+                        .padding(.vertical, 8)
+                        .background(
+                            isZoomPresetActive(preset) ? primaryGreen : Color.black.opacity(0.38),
+                            in: Capsule()
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .opacity(coordinator.state == .tracking ? 0.78 : 1)
     }
 
     private var captureControls: some View {
@@ -801,12 +848,37 @@ struct ContentView: View {
         return percentText(smoothness)
     }
 
+    private var finalZoomText: String {
+        let zoom = double(at: ["evidence", "camera", "cameraSummary", "finalZoomFactor"]) ?? coordinator.zoomFactor
+        return "\(zoomLabel(zoom))x"
+    }
+
+    private var lensClassText: String {
+        let lens = string(at: ["evidence", "camera", "cameraDevice", "lensClass"]) ?? coordinator.activeLensClass
+        switch lens {
+        case "telephoto":
+            return "Telephoto"
+        case "wide":
+            return "Wide"
+        default:
+            return lens.capitalized
+        }
+    }
+
     private var boundingBoxTraceCount: Int {
         array(at: ["evidence", "tracking", "boundingBoxTrace"])?.count ?? 0
     }
 
     private var devicePoseTraceCount: Int {
         array(at: ["evidence", "motion", "devicePoseTrace"])?.count ?? 0
+    }
+
+    private var zoomTraceCount: Int {
+        array(at: ["evidence", "camera", "zoomTrace"])?.count ?? 0
+    }
+
+    private var lensSwitchCount: Int {
+        int(at: ["evidence", "camera", "cameraSummary", "lensSwitchCount"]) ?? 0
     }
 
     private var audioFeaturesCaptured: Bool {
@@ -918,6 +990,17 @@ struct ContentView: View {
 
     private func percentText(_ value: Double) -> String {
         "\(Int((value * 100).rounded()))%"
+    }
+
+    private func zoomLabel(_ value: Double) -> String {
+        if abs(value.rounded() - value) < 0.05 {
+            return "\(Int(value.rounded()))"
+        }
+        return String(format: "%.1f", value)
+    }
+
+    private func isZoomPresetActive(_ preset: Double) -> Bool {
+        abs(coordinator.zoomFactor - preset) < 0.18
     }
 
     private func readableReason(_ code: String) -> String {

@@ -24,6 +24,16 @@ private struct TargetLostEvent {
     let reason: String
 }
 
+private struct CameraZoomSample {
+    let timestamp: Date
+    let effectiveZoomFactor: Double
+    let requestedZoomFactor: Double
+    let lensClass: String
+    let digitalZoomFactor: Double
+    let digitalFallback: Bool
+    let preset: String?
+}
+
 final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationManagerDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     @Published private(set) var state: GuidedCaptureState = .previewStarting
     @Published private(set) var guidanceText = "Starting camera..."
@@ -33,6 +43,10 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     @Published private(set) var stabilityScore = 0.0
     @Published private(set) var trackingBox: CGRect?
     @Published private(set) var trackingConfidence = 0.0
+    @Published private(set) var zoomFactor = 1.0
+    @Published private(set) var maxZoomFactor = 4.0
+    @Published private(set) var activeLensClass = "wide"
+    @Published private(set) var availableZoomPresets: [Double] = [1, 2, 4]
     @Published private(set) var observationPackagePreview = ""
     @Published private(set) var errorText: String?
 
@@ -42,6 +56,9 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     private let videoOutput = AVCaptureVideoDataOutput()
     private let locationManager = CLLocationManager()
     private var cameraConfigured = false
+    private var activeCameraInput: AVCaptureDeviceInput?
+    private var activeCameraDevice: AVCaptureDevice?
+    private var availableCameras: [CameraLens: AVCaptureDevice] = [:]
     private var captureStartedAt: Date?
     private var captureEndedAt: Date?
     private var timer: Timer?
@@ -56,6 +73,16 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     private var lastTraceSampleAt: Date?
     private var lastTrackingUpdateAt: Date?
     private var consecutiveLowConfidenceFrames = 0
+    private var zoomTrace: [CameraZoomSample] = []
+    private var lensSwitchCount = 0
+    private var lastZoomSampleAt: Date?
+    private var lastLensSwitchAt: Date?
+    private var requestedZoomFactor = 1.0
+
+    private enum CameraLens: String {
+        case wide
+        case telephoto
+    }
 
     override init() {
         super.init()
@@ -69,6 +96,14 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
 
     var canCompleteTracking: Bool {
         state == .tracking
+    }
+
+    func setZoomFactor(_ factor: Double) {
+        applyZoom(factor: factor, preset: nil)
+    }
+
+    func setZoomPreset(_ factor: Double) {
+        applyZoom(factor: factor, preset: "\(formatZoom(factor))x")
     }
 
     func startPreview() {
@@ -127,6 +162,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         trackingBox = selectedBox
         prepareVisionTracker(for: selectedBox)
         resetTrackingEvidence()
+        recordCurrentZoomSampleIfNeeded(preset: nil)
         state = .tracking
         guidanceText = "Keep the object inside the box."
         startLocationCapture()
@@ -164,6 +200,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         trackingBox = nil
         trackingConfidence = 0
         resetTrackingRuntime()
+        resetCameraEvidence()
         state = cameraConfigured ? .ready : .previewStarting
         guidanceText = cameraConfigured ? "Point at a flying object and tap to nominate it." : "Starting camera..."
     }
@@ -181,7 +218,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                 self.cameraSession.beginConfiguration()
                 self.cameraSession.sessionPreset = .high
 
-                guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+                self.discoverAvailableCameras()
+                guard let camera = self.availableCameras[.wide] else {
                     DispatchQueue.main.async {
                         self.markUnavailable("No back camera is available on this device.")
                     }
@@ -193,6 +231,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                     let input = try AVCaptureDeviceInput(device: camera)
                     if self.cameraSession.canAddInput(input) {
                         self.cameraSession.addInput(input)
+                        self.activeCameraInput = input
+                        self.activeCameraDevice = camera
                     }
 
                     self.videoOutput.alwaysDiscardsLateVideoFrames = true
@@ -208,6 +248,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                         }
                     }
                     self.cameraConfigured = true
+                    self.updateZoomCapabilities(for: camera)
+                    self.applyZoomToActiveDevice(requestedFactor: self.requestedZoomFactor, preset: "1x", shouldRecord: false)
                 } catch {
                     DispatchQueue.main.async {
                         self.markUnavailable("Could not start camera: \(error.localizedDescription)")
@@ -230,6 +272,218 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                 self.errorText = nil
             }
         }
+    }
+
+    private func discoverAvailableCameras() {
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .builtInTelephotoCamera],
+            mediaType: .video,
+            position: .back
+        )
+
+        var cameras: [CameraLens: AVCaptureDevice] = [:]
+        for device in discovery.devices {
+            switch device.deviceType {
+            case .builtInTelephotoCamera:
+                cameras[.telephoto] = device
+            case .builtInWideAngleCamera:
+                cameras[.wide] = device
+            default:
+                break
+            }
+        }
+
+        if cameras[.wide] == nil,
+           let fallback = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
+            cameras[.wide] = fallback
+        }
+
+        availableCameras = cameras
+    }
+
+    private func applyZoom(factor: Double, preset: String?) {
+        let requestedFactor = max(1, min(factor, maxZoomFactor))
+        requestedZoomFactor = requestedFactor
+
+        sessionQueue.async { [weak self] in
+            guard let self else {
+                return
+            }
+
+            guard self.cameraConfigured else {
+                DispatchQueue.main.async {
+                    self.zoomFactor = requestedFactor
+                }
+                return
+            }
+
+            self.applyZoomToActiveDevice(requestedFactor: requestedFactor, preset: preset, shouldRecord: true)
+        }
+    }
+
+    private func applyZoomToActiveDevice(requestedFactor: Double, preset: String?, shouldRecord: Bool) {
+        discoverAvailableCameras()
+        let targetLens = preferredLens(for: requestedFactor)
+        let didSwitchLens = switchCameraIfNeeded(to: targetLens)
+
+        guard let device = activeCameraDevice else {
+            return
+        }
+
+        updateZoomCapabilities(for: device)
+
+        let lensBase = baseZoomFactor(for: targetLens)
+        let digitalZoom = max(1, requestedFactor / lensBase)
+        let clampedDigitalZoom = min(max(1, digitalZoom), device.activeFormat.videoMaxZoomFactor)
+
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = clampedDigitalZoom
+            device.unlockForConfiguration()
+        } catch {
+            // Zoom is helpful, but capture can continue at the current camera zoom.
+        }
+
+        if didSwitchLens, let box = trackingBox {
+            prepareVisionTrackerOnSessionQueue(for: box)
+        }
+
+        let effectiveZoom = rounded(lensBase * clampedDigitalZoom)
+        let lensClass = targetLens.rawValue
+        let usesDigitalFallback = targetLens == .wide && requestedFactor >= telephotoEntryThreshold
+        let sample = CameraZoomSample(
+            timestamp: Date(),
+            effectiveZoomFactor: effectiveZoom,
+            requestedZoomFactor: rounded(requestedFactor),
+            lensClass: lensClass,
+            digitalZoomFactor: rounded(clampedDigitalZoom),
+            digitalFallback: usesDigitalFallback,
+            preset: preset
+        )
+
+        if shouldRecord && shouldRecordZoomSample(sample) {
+            zoomTrace.append(sample)
+            lastZoomSampleAt = sample.timestamp
+        }
+
+        DispatchQueue.main.async {
+            self.zoomFactor = effectiveZoom
+            self.activeLensClass = lensClass
+        }
+    }
+
+    private var telephotoEntryThreshold: Double {
+        1.85
+    }
+
+    private var telephotoExitThreshold: Double {
+        1.45
+    }
+
+    private func preferredLens(for requestedFactor: Double) -> CameraLens {
+        guard availableCameras[.telephoto] != nil else {
+            return .wide
+        }
+
+        if activeLens() == .telephoto {
+            return requestedFactor <= telephotoExitThreshold ? .wide : .telephoto
+        }
+
+        return requestedFactor >= telephotoEntryThreshold ? .telephoto : .wide
+    }
+
+    private func activeLens() -> CameraLens {
+        activeCameraDevice?.deviceType == .builtInTelephotoCamera ? .telephoto : .wide
+    }
+
+    private func switchCameraIfNeeded(to lens: CameraLens) -> Bool {
+        guard activeLens() != lens,
+              let newCamera = availableCameras[lens],
+              Date().timeIntervalSince(lastLensSwitchAt ?? .distantPast) > 0.35 else {
+            return false
+        }
+
+        do {
+            let newInput = try AVCaptureDeviceInput(device: newCamera)
+            cameraSession.beginConfiguration()
+            let oldInput = activeCameraInput
+            if let oldInput {
+                cameraSession.removeInput(oldInput)
+            }
+            if cameraSession.canAddInput(newInput) {
+                cameraSession.addInput(newInput)
+                activeCameraInput = newInput
+                activeCameraDevice = newCamera
+                lensSwitchCount += 1
+                lastLensSwitchAt = Date()
+            } else if let oldInput, cameraSession.canAddInput(oldInput) {
+                cameraSession.addInput(oldInput)
+            }
+            cameraSession.commitConfiguration()
+            return activeCameraDevice === newCamera
+        } catch {
+            return false
+        }
+    }
+
+    private func updateZoomCapabilities(for device: AVCaptureDevice) {
+        let wideMax = availableCameras[.wide]?.activeFormat.videoMaxZoomFactor ?? device.activeFormat.videoMaxZoomFactor
+        let teleMax = availableCameras[.telephoto]?.activeFormat.videoMaxZoomFactor ?? 1
+        let effectiveMax = max(4, min(8, max(wideMax, baseZoomFactor(for: .telephoto) * teleMax)))
+        let presets = [1.0, 2.0, 4.0].filter { $0 <= effectiveMax + 0.01 }
+
+        DispatchQueue.main.async {
+            self.maxZoomFactor = effectiveMax
+            self.availableZoomPresets = presets.isEmpty ? [1.0] : presets
+        }
+    }
+
+    private func baseZoomFactor(for lens: CameraLens) -> Double {
+        switch lens {
+        case .wide:
+            return 1
+        case .telephoto:
+            return 2
+        }
+    }
+
+    private func shouldRecordZoomSample(_ sample: CameraZoomSample) -> Bool {
+        guard let last = zoomTrace.last else {
+            return true
+        }
+        if last.lensClass != sample.lensClass || last.preset != sample.preset {
+            return true
+        }
+        if abs(last.effectiveZoomFactor - sample.effectiveZoomFactor) >= 0.08 {
+            return true
+        }
+        guard let lastZoomSampleAt else {
+            return true
+        }
+        return sample.timestamp.timeIntervalSince(lastZoomSampleAt) >= 1.0
+    }
+
+    private func recordCurrentZoomSampleIfNeeded(preset: String?) {
+        let sample = CameraZoomSample(
+            timestamp: Date(),
+            effectiveZoomFactor: rounded(zoomFactor),
+            requestedZoomFactor: rounded(requestedZoomFactor),
+            lensClass: activeLensClass,
+            digitalZoomFactor: rounded(Double(activeCameraDevice?.videoZoomFactor ?? 1)),
+            digitalFallback: activeLens() == .wide && requestedZoomFactor >= telephotoEntryThreshold,
+            preset: preset
+        )
+
+        if shouldRecordZoomSample(sample) {
+            zoomTrace.append(sample)
+            lastZoomSampleAt = sample.timestamp
+        }
+    }
+
+    private func resetCameraEvidence() {
+        zoomTrace = []
+        lensSwitchCount = 0
+        lastZoomSampleAt = nil
     }
 
     private func tickTracking() {
@@ -398,7 +652,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                     "reacquisitionEvents": [],
                     "boundingBoxTrace": boundingBoxTrace(startedAt: startedAt, endedAt: endedAt)
                 ],
-                "motion": motion
+                "motion": motion,
+                "camera": cameraEvidence()
             ],
             "derivedEvidence": [
                 "qualityScore": rounded(qualityScore),
@@ -413,6 +668,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                 ],
                 "featureFlags": [
                     "hasBoundingBoxTrace": true,
+                    "hasCameraZoomTrace": !zoomTrace.isEmpty,
                     "hasDevicePoseTrace": true,
                     "hasObserverLocation": latestLocation != nil,
                     "hasAudioFeatures": false
@@ -545,15 +801,18 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     }
 
     private func prepareVisionTracker(for displayBox: CGRect) {
+        sessionQueue.async { [weak self] in
+            self?.prepareVisionTrackerOnSessionQueue(for: displayBox)
+        }
+    }
+
+    private func prepareVisionTrackerOnSessionQueue(for displayBox: CGRect) {
         let clampedBox = clamp(box: displayBox)
         let observation = VNDetectedObjectObservation(boundingBox: visionBox(fromDisplayBox: clampedBox))
         let request = VNTrackObjectRequest(detectedObjectObservation: observation)
         request.trackingLevel = .accurate
-
-        sessionQueue.async { [weak self] in
-            self?.sequenceRequestHandler = VNSequenceRequestHandler()
-            self?.trackingRequest = request
-        }
+        sequenceRequestHandler = VNSequenceRequestHandler()
+        trackingRequest = request
     }
 
     private func applyTrackingUpdate(box: CGRect, confidence: Double, timestamp: Date) {
@@ -667,8 +926,9 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     }
 
     private func box(around point: CGPoint) -> CGRect {
-        let width = 0.44
-        let height = 0.26
+        let zoomScale = max(1, sqrt(requestedZoomFactor))
+        let width = max(0.12, min(0.26, 0.26 / zoomScale))
+        let height = max(0.08, min(0.17, 0.17 / zoomScale))
         let x = min(max(point.x - width / 2, 0.03), 1 - width - 0.03)
         let y = min(max(point.y - height / 2, 0.08), 1 - height - 0.08)
         return CGRect(x: x, y: y, width: width, height: height)
@@ -721,11 +981,63 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         (value * 100).rounded() / 100
     }
 
+    private func formatZoom(_ value: Double) -> String {
+        if value.rounded() == value {
+            return "\(Int(value))"
+        }
+        return String(format: "%.1f", value)
+    }
+
     private func spatialUncertaintyMeters() -> Double {
         guard let latestLocation, latestLocation.horizontalAccuracy >= 0 else {
             return 1000
         }
         return max(25, rounded(latestLocation.horizontalAccuracy))
+    }
+
+    private func cameraEvidence() -> [String: Any] {
+        let trace = zoomTrace.isEmpty ? [
+            CameraZoomSample(
+                timestamp: captureStartedAt ?? Date(),
+                effectiveZoomFactor: rounded(zoomFactor),
+                requestedZoomFactor: rounded(requestedZoomFactor),
+                lensClass: activeLensClass,
+                digitalZoomFactor: rounded(Double(activeCameraDevice?.videoZoomFactor ?? 1)),
+                digitalFallback: activeLens() == .wide && requestedZoomFactor >= telephotoEntryThreshold,
+                preset: nil
+            )
+        ] : zoomTrace
+        let zoomFactors = trace.map { $0.effectiveZoomFactor }
+
+        return [
+            "cameraDevice": [
+                "position": "back",
+                "lensClass": activeLensClass,
+                "physicalLensSwitchingSupported": availableCameras[.telephoto] != nil
+            ],
+            "cameraSummary": [
+                "minZoomFactor": rounded(zoomFactors.min() ?? zoomFactor),
+                "maxZoomFactor": rounded(zoomFactors.max() ?? zoomFactor),
+                "finalZoomFactor": rounded(zoomFactor),
+                "lensSwitchCount": lensSwitchCount,
+                "usedPhysicalLensSwitching": trace.contains { $0.lensClass == CameraLens.telephoto.rawValue },
+                "usedDigitalFallback": trace.contains { $0.digitalFallback }
+            ],
+            "zoomTrace": trace.map { sample in
+                var output: [String: Any] = [
+                    "timestamp": isoString(sample.timestamp),
+                    "effectiveZoomFactor": rounded(sample.effectiveZoomFactor),
+                    "requestedZoomFactor": rounded(sample.requestedZoomFactor),
+                    "lensClass": sample.lensClass,
+                    "digitalZoomFactor": rounded(sample.digitalZoomFactor),
+                    "digitalFallback": sample.digitalFallback
+                ]
+                if let preset = sample.preset {
+                    output["preset"] = preset
+                }
+                return output
+            }
+        ]
     }
 
     private func boundingBoxTrace(startedAt: Date, endedAt: Date) -> [[String: Any]] {

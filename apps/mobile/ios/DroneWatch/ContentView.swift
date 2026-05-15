@@ -5,6 +5,9 @@ struct ContentView: View {
     @ObservedObject var coordinator: GuidedCaptureCoordinator
     @State private var selectedTab: AppTab = .capture
     @State private var previewStateOverride: CaptureVisualState?
+    @State private var saveAcknowledged = false
+    @State private var showTechnicalMetadata = false
+    @State private var showRawPackage = false
 
     private enum AppTab: String, CaseIterable {
         case capture
@@ -55,7 +58,7 @@ struct ContentView: View {
         Group {
             switch selectedTab {
             case .capture:
-                captureScreen
+                captureRoot
             case .map:
                 placeholderScreen(
                     title: "Map",
@@ -72,6 +75,15 @@ struct ContentView: View {
         }
         .background(Color.black)
         .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var captureRoot: some View {
+        if coordinator.state == .complete {
+            observationReviewScreen
+        } else {
+            captureScreen
+        }
     }
 
     private var captureScreen: some View {
@@ -123,6 +135,193 @@ struct ContentView: View {
 
             bottomNavigationBar
         }
+    }
+
+    private var observationReviewScreen: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.black, Color(red: 0.04, green: 0.07, blue: 0.08), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        reviewHeaderCard
+                        reviewMainValues
+                        reviewEvidenceSummary
+                        reviewReasonCodes
+                        reviewTechnicalSection
+                        reviewActions
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, 18)
+                }
+
+                bottomNavigationBar
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+            }
+        }
+        .onAppear {
+            previewStateOverride = nil
+        }
+    }
+
+    private var reviewHeaderCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Observation captured")
+                        .font(.largeTitle.weight(.semibold))
+                        .foregroundColor(whitePrimary)
+                    Text(reviewTimestampText)
+                        .font(.subheadline)
+                        .foregroundColor(whiteSecondary)
+                }
+
+                Spacer()
+
+                reviewBadge(text: reviewQualityTitle, color: reviewQualityColor)
+            }
+
+            Text(reviewSummarySentence)
+                .font(.body)
+                .foregroundColor(whitePrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                Label(locationStatusText, systemImage: locationCaptured ? "location.fill" : "location.slash")
+                Label(trackingStatusText, systemImage: "viewfinder")
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundColor(whiteSecondary)
+        }
+        .padding(18)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(reviewQualityColor.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private var reviewMainValues: some View {
+        reviewSection(title: "Captured values") {
+            LazyVGrid(columns: reviewGridColumns, spacing: 10) {
+                reviewMetric("Duration", durationText, "timer")
+                reviewMetric("Reliability", reviewQualityTitle, "checkmark.seal")
+                reviewMetric("Heading", headingText, "location.north.line")
+                reviewMetric("Location", locationAccuracyText, "location")
+                reviewMetric("Tracking", percentText(motionStability), "waveform.path.ecg")
+                reviewMetric("Motion", motionConsistencyText, "gyroscope")
+            }
+        }
+    }
+
+    private var reviewEvidenceSummary: some View {
+        reviewSection(title: "Evidence captured") {
+            VStack(spacing: 10) {
+                evidenceRow("Bounding box trace", isAvailable: boundingBoxTraceCount > 0, detail: "\(boundingBoxTraceCount) samples")
+                evidenceRow("Device pose trace", isAvailable: devicePoseTraceCount > 0, detail: "\(devicePoseTraceCount) samples")
+                evidenceRow("Location", isAvailable: locationCaptured, detail: locationStatusText)
+                evidenceRow("Audio features", isAvailable: audioFeaturesCaptured, detail: audioFeaturesCaptured ? "Captured" : "Not captured")
+                evidenceRow("Target lost events", isAvailable: targetLostEventCount == 0, detail: "\(targetLostEventCount)")
+                evidenceRow("Reacquisition events", isAvailable: reacquisitionEventCount > 0, detail: "\(reacquisitionEventCount)")
+            }
+        }
+    }
+
+    private var reviewReasonCodes: some View {
+        reviewSection(title: "Quality reasons") {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(readableReasonCodes, id: \.self) { reason in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: reasonIcon(for: reason))
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(reviewQualityColor)
+                            .frame(width: 18)
+                        Text(reason)
+                            .font(.subheadline)
+                            .foregroundColor(whitePrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+    }
+
+    private var reviewTechnicalSection: some View {
+        reviewSection(title: "Technical metadata") {
+            DisclosureGroup(isExpanded: $showTechnicalMetadata) {
+                VStack(spacing: 10) {
+                    metadataRow("Package ID", packageIdText)
+                    metadataRow("Session ID", captureSessionIdText)
+                    metadataRow("Schema", schemaVersionText)
+                    metadataRow("Platform", appPlatformText)
+                    metadataRow("App version", appVersionText)
+                    metadataRow("Created", createdAtText)
+                    metadataRow("Started", startedAtText)
+                    metadataRow("Ended", endedAtText)
+
+                    #if DEBUG
+                    DisclosureGroup(isExpanded: $showRawPackage) {
+                        ScrollView(.horizontal, showsIndicators: true) {
+                            Text(rawPackageText)
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundColor(whiteSecondary)
+                                .padding(.top, 8)
+                        }
+                    } label: {
+                        Label("Raw Observation Package JSON", systemImage: "curlybraces")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(whitePrimary)
+                    }
+                    #endif
+                }
+                .padding(.top, 10)
+            } label: {
+                Label("Show metadata", systemImage: "info.circle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(whitePrimary)
+            }
+            .accentColor(primaryGreen)
+        }
+    }
+
+    private var reviewActions: some View {
+        VStack(spacing: 10) {
+            Button(action: {
+                saveAcknowledged = true
+            }) {
+                Label(saveAcknowledged ? "Observation saved locally" : "Save observation", systemImage: saveAcknowledged ? "checkmark.circle.fill" : "tray.and.arrow.down")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(primaryGreen)
+
+            HStack(spacing: 10) {
+                Button("Retake") {
+                    saveAcknowledged = false
+                    showTechnicalMetadata = false
+                    showRawPackage = false
+                    coordinator.cancelTracking()
+                }
+                .buttonStyle(.bordered)
+                .tint(whitePrimary)
+                .frame(maxWidth: .infinity)
+
+                Button("View on map") {
+                    selectedTab = .map
+                }
+                .buttonStyle(.bordered)
+                .tint(primaryGreen)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.top, 2)
     }
 
     private func placeholderScreen(title: String, message: String, icon: String) -> some View {
@@ -409,6 +608,382 @@ struct ContentView: View {
         .padding(22)
     }
 
+    private var reviewGridColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: 10),
+            GridItem(.flexible(), spacing: 10)
+        ]
+    }
+
+    private func reviewSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(whitePrimary)
+
+            content()
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private func reviewMetric(_ title: String, _ value: String, _ icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: icon)
+                .font(.headline)
+                .foregroundColor(reviewQualityColor)
+            Text(value)
+                .font(.headline)
+                .foregroundColor(whitePrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+            Text(title)
+                .font(.caption)
+                .foregroundColor(whiteSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func reviewBadge(text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption.weight(.bold))
+            .foregroundColor(.black)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(color, in: Capsule())
+    }
+
+    private func evidenceRow(_ title: String, isAvailable: Bool, detail: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: isAvailable ? "checkmark.circle.fill" : "minus.circle")
+                .foregroundColor(isAvailable ? primaryGreen : whiteSecondary)
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(whitePrimary)
+            Spacer()
+            Text(detail)
+                .font(.caption)
+                .foregroundColor(whiteSecondary)
+        }
+    }
+
+    private func metadataRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(whiteSecondary)
+                .frame(width: 86, alignment: .leading)
+            Text(value)
+                .font(.caption)
+                .foregroundColor(whitePrimary)
+                .textSelection(.enabled)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var packageDictionary: [String: Any] {
+        guard let data = coordinator.observationPackagePreview.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any] else {
+            return [:]
+        }
+
+        return dictionary
+    }
+
+    private var reviewQualityTier: String {
+        string(at: ["derivedEvidence", "qualityTier"]) ?? "insufficient"
+    }
+
+    private var reviewQualityTitle: String {
+        switch reviewQualityTier {
+        case "strong":
+            return "Strong"
+        case "moderate":
+            return "Moderate"
+        case "weak":
+            return "Weak"
+        default:
+            return "Insufficient"
+        }
+    }
+
+    private var reviewQualityColor: Color {
+        switch reviewQualityTier {
+        case "strong":
+            return primaryGreen
+        case "moderate":
+            return acquiringYellow
+        default:
+            return lostRed
+        }
+    }
+
+    private var reviewTimestampText: String {
+        formatISODate(createdAtText)
+    }
+
+    private var reviewSummarySentence: String {
+        let headingPart = headingAvailable ? " Direction estimate available." : " No direction estimate yet."
+        return "Tracked for \(durationText.lowercased()).\(headingPart)"
+    }
+
+    private var durationText: String {
+        let ms = int(at: ["evidence", "tracking", "durationMs"]) ?? int(at: ["derivedEvidence", "compactFeatureSummary", "durationMs"]) ?? 0
+        let seconds = Double(ms) / 1000
+        if seconds >= 60 {
+            return String(format: "%.1f min", seconds / 60)
+        }
+        return String(format: "%.0f sec", seconds)
+    }
+
+    private var trackingStatusText: String {
+        let status = string(at: ["evidence", "tracking", "trackingStatus"]) ?? "not_available"
+        switch status {
+        case "tracked":
+            return "Tracked"
+        case "weak":
+            return "Weak track"
+        case "lost":
+            return "Target lost"
+        default:
+            return "No track"
+        }
+    }
+
+    private var headingAvailable: Bool {
+        double(at: ["evidence", "motion", "bearingEstimate", "degrees"]) != nil ||
+            double(at: ["validationJoin", "roughBearingDegrees"]) != nil
+    }
+
+    private var headingText: String {
+        guard let heading = double(at: ["evidence", "motion", "bearingEstimate", "degrees"]) ?? double(at: ["validationJoin", "roughBearingDegrees"]) else {
+            return "Unavailable"
+        }
+        return "\(Int(heading.rounded())) deg"
+    }
+
+    private var locationCaptured: Bool {
+        bool(at: ["derivedEvidence", "featureFlags", "hasObserverLocation"]) ??
+            (dictionary(at: ["validationJoin", "observerLocation"]) != nil)
+    }
+
+    private var locationStatusText: String {
+        locationCaptured ? "Location captured" : "No location"
+    }
+
+    private var locationAccuracyText: String {
+        guard locationCaptured else {
+            return "Unavailable"
+        }
+        let accuracy = double(at: ["validationJoin", "observerLocation", "accuracyMeters"]) ??
+            double(at: ["validationJoin", "spatialUncertaintyMeters"])
+        guard let accuracy else {
+            return "Available"
+        }
+        return "\(Int(accuracy.rounded())) m"
+    }
+
+    private var motionStability: Double {
+        double(at: ["derivedEvidence", "qualitySignals", "motionStability"]) ??
+            double(at: ["evidence", "motion", "motionSummary", "motionSmoothnessScore"]) ??
+            0
+    }
+
+    private var motionConsistencyText: String {
+        let smoothness = double(at: ["evidence", "motion", "motionSummary", "motionSmoothnessScore"]) ?? motionStability
+        return percentText(smoothness)
+    }
+
+    private var boundingBoxTraceCount: Int {
+        array(at: ["evidence", "tracking", "boundingBoxTrace"])?.count ?? 0
+    }
+
+    private var devicePoseTraceCount: Int {
+        array(at: ["evidence", "motion", "devicePoseTrace"])?.count ?? 0
+    }
+
+    private var audioFeaturesCaptured: Bool {
+        bool(at: ["derivedEvidence", "featureFlags", "hasAudioFeatures"]) ?? false
+    }
+
+    private var targetLostEventCount: Int {
+        array(at: ["evidence", "tracking", "targetLostEvents"])?.count ?? 0
+    }
+
+    private var reacquisitionEventCount: Int {
+        array(at: ["evidence", "tracking", "reacquisitionEvents"])?.count ?? 0
+    }
+
+    private var readableReasonCodes: [String] {
+        let reasonCodes = stringArray(at: ["derivedEvidence", "reasonCodes"])
+        let insufficiencyReasons = stringArray(at: ["derivedEvidence", "insufficiencyReasons"])
+        let combined = reasonCodes + insufficiencyReasons
+        let readable = combined.map(readableReason).removingDuplicates()
+        return readable.isEmpty ? ["Observation package was generated for review."] : readable
+    }
+
+    private var packageIdText: String {
+        string(at: ["packageId"]) ?? "unknown"
+    }
+
+    private var captureSessionIdText: String {
+        string(at: ["captureSession", "captureSessionId"]) ?? "unknown"
+    }
+
+    private var schemaVersionText: String {
+        string(at: ["schemaVersion"]) ?? "unknown"
+    }
+
+    private var appPlatformText: String {
+        string(at: ["captureSession", "appPlatform"]) ?? "unknown"
+    }
+
+    private var appVersionText: String {
+        string(at: ["captureSession", "device", "appVersion"]) ?? "unknown"
+    }
+
+    private var createdAtText: String {
+        string(at: ["createdAt"]) ?? "unknown"
+    }
+
+    private var startedAtText: String {
+        string(at: ["captureSession", "startedAt"]) ?? string(at: ["validationJoin", "timeWindow", "startedAt"]) ?? "unknown"
+    }
+
+    private var endedAtText: String {
+        string(at: ["captureSession", "endedAt"]) ?? string(at: ["validationJoin", "timeWindow", "endedAt"]) ?? "unknown"
+    }
+
+    private var rawPackageText: String {
+        coordinator.observationPackagePreview.isEmpty ? "Observation Package unavailable." : coordinator.observationPackagePreview
+    }
+
+    private func dictionary(at path: [String]) -> [String: Any]? {
+        value(at: path) as? [String: Any]
+    }
+
+    private func array(at path: [String]) -> [Any]? {
+        value(at: path) as? [Any]
+    }
+
+    private func string(at path: [String]) -> String? {
+        value(at: path) as? String
+    }
+
+    private func stringArray(at path: [String]) -> [String] {
+        array(at: path)?.compactMap { $0 as? String } ?? []
+    }
+
+    private func int(at path: [String]) -> Int? {
+        if let intValue = value(at: path) as? Int {
+            return intValue
+        }
+        if let doubleValue = value(at: path) as? Double {
+            return Int(doubleValue)
+        }
+        return nil
+    }
+
+    private func double(at path: [String]) -> Double? {
+        if let doubleValue = value(at: path) as? Double {
+            return doubleValue
+        }
+        if let intValue = value(at: path) as? Int {
+            return Double(intValue)
+        }
+        return nil
+    }
+
+    private func bool(at path: [String]) -> Bool? {
+        value(at: path) as? Bool
+    }
+
+    private func value(at path: [String]) -> Any? {
+        var current: Any? = packageDictionary
+        for key in path {
+            guard let dictionary = current as? [String: Any] else {
+                return nil
+            }
+            current = dictionary[key]
+        }
+        return current
+    }
+
+    private func percentText(_ value: Double) -> String {
+        "\(Int((value * 100).rounded()))%"
+    }
+
+    private func readableReason(_ code: String) -> String {
+        switch code {
+        case "sufficient_continuous_track":
+            return "Object stayed tracked long enough"
+        case "stable_heading":
+            return "Heading was stable"
+        case "observer_location_available":
+            return "Location was available"
+        case "audio_supporting_evidence":
+            return "Audio supported the observation"
+        case "audio_not_required":
+            return "Audio was not required"
+        case "duration_below_strong":
+            return "Capture duration was below strong-evidence level"
+        case "tracking_too_short":
+            return "Tracking was too short"
+        case "continuity_low":
+            return "Tracking continuity was limited"
+        case "tracking_lost":
+            return "Target was lost during capture"
+        case "low_visual_confidence":
+            return "Visual tracking confidence was low"
+        case "no_location":
+            return "Location was not available"
+        case "unstable_heading":
+            return "Heading was unstable"
+        case "poor_device_motion":
+            return "Phone movement was inconsistent"
+        case "audio_unavailable":
+            return "Audio was unavailable"
+        case "observer_low_confidence":
+            return "Observer confidence was low"
+        default:
+            return code.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
+
+    private func reasonIcon(for reason: String) -> String {
+        let lowercased = reason.lowercased()
+        if lowercased.contains("not") ||
+            lowercased.contains("lost") ||
+            lowercased.contains("low") ||
+            lowercased.contains("short") ||
+            lowercased.contains("limited") ||
+            lowercased.contains("unstable") ||
+            lowercased.contains("inconsistent") ||
+            lowercased.contains("unavailable") {
+            return "exclamationmark.circle.fill"
+        }
+        return "checkmark.circle.fill"
+    }
+
+    private func formatISODate(_ text: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: text) else {
+            return text
+        }
+
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateStyle = .medium
+        displayFormatter.timeStyle = .short
+        return displayFormatter.string(from: date)
+    }
+
     private var visualState: CaptureVisualState {
         if let previewStateOverride {
             return previewStateOverride
@@ -662,5 +1237,12 @@ struct CrosshairView: Shape {
         path.addLine(to: CGPoint(x: center.x, y: center.y + gap + length))
 
         return path
+    }
+}
+
+private extension Array where Element: Hashable {
+    func removingDuplicates() -> [Element] {
+        var seen = Set<Element>()
+        return filter { seen.insert($0).inserted }
     }
 }

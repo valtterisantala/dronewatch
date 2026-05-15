@@ -4,10 +4,10 @@ This folder contains versioned contracts and DTO definitions.
 
 Examples:
 - report payloads
-- telemetry payloads
+- observation package payloads
 - map-feed payloads
-- drone registry payloads
-- flight session payloads
+- evidence ingest payloads
+- downstream read-model payloads
 
 This package is the main semantic boundary between:
 - mobile app
@@ -15,3 +15,7 @@ This package is the main semantic boundary between:
 - downstream consumers such as Adaptive UI CUAS
 
 Contracts should be explicit, stable, and version-aware.
+
+## Current contracts
+
+- `observation-package/v1`: guided civilian Observation Package contract for camera-based capture evidence.

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "observation_package.v1",
+  "packageId": "obs_pkg_20260515_0002",
+  "sourceType": "civilian_report",
+  "packageKind": "observation_package",
+  "createdAt": "2026-05-15T12:16:08Z",
+  "captureSession": {
+    "captureSessionId": "cap_20260515_0002",
+    "startedAt": "2026-05-15T12:16:04Z",
+    "endedAt": "2026-05-15T12:16:08Z",
+    "appPlatform": "android",
+    "captureMode": "guided_camera",
+    "device": {
+      "deviceClass": "android_phone",
+      "osVersion": "Android 15",
+      "appVersion": "0.1.0"
+    }
+  },
+  "humanReport": {
+    "observationType": "unknown_airborne_object",
+    "observerConfidence": "low",
+    "countEstimate": 1,
+    "note": "Object disappeared before I could track it."
+  },
+  "evidence": {
+    "tracking": {
+      "trackingStatus": "lost",
+      "targetTrackId": "track_weak_01",
+      "trackStartedAt": "2026-05-15T12:16:05Z",
+      "trackEndedAt": "2026-05-15T12:16:06Z",
+      "durationMs": 900,
+      "frameCount": 12,
+      "continuityScore": 0.18,
+      "targetLostEvents": [
+        {
+          "timestamp": "2026-05-15T12:16:06Z",
+          "durationMs": 800,
+          "reason": "tracker_uncertain"
+        }
+      ],
+      "reacquisitionEvents": [],
+      "boundingBoxTrace": [
+        {
+          "timestamp": "2026-05-15T12:16:05Z",
+          "box": {
+            "x": 0.66,
+            "y": 0.22,
+            "width": 0.02,
+            "height": 0.02
+          },
+          "confidence": 0.32
+        }
+      ]
+    },
+    "motion": {
+      "devicePoseTrace": [
+        {
+          "timestamp": "2026-05-15T12:16:05Z",
+          "headingDegrees": 18.2,
+          "pitchDegrees": 37.0,
+          "rollDegrees": 9.6
+        }
+      ],
+      "motionSummary": {
+        "apparentDirection": "unclear",
+        "stability": "unstable",
+        "headingStabilityScore": 0.22,
+        "motionSmoothnessScore": 0.18
+      }
+    },
+    "audio": {
+      "captured": true,
+      "sampleWindow": {
+        "startedAt": "2026-05-15T12:16:04Z",
+        "endedAt": "2026-05-15T12:16:08Z"
+      },
+      "quality": "not_usable"
+    }
+  },
+  "derivedEvidence": {
+    "qualityScore": 0.18,
+    "qualityTier": "insufficient",
+    "qualitySignals": {
+      "continuityScore": 0.18,
+      "visualConfidence": 0.21,
+      "headingConfidence": 0.12,
+      "motionStability": 0.2
+    },
+    "reasonCodes": [
+      "tracking_too_short",
+      "tracking_lost",
+      "low_visual_confidence",
+      "poor_device_motion",
+      "observer_low_confidence"
+    ],
+    "insufficiencyReasons": [
+      "tracking_too_short",
+      "tracking_lost",
+      "low_visual_confidence",
+      "poor_device_motion",
+      "observer_low_confidence"
+    ],
+    "featureFlags": {
+      "hasBoundingBoxTrace": true,
+      "hasDevicePoseTrace": true,
+      "hasObserverLocation": false,
+      "hasAudioFeatures": false
+    },
+    "mlReadiness": "not_ready",
+    "compactFeatureSummary": {
+      "durationMs": 900,
+      "frameCount": 12
+    }
+  },
+  "validationJoin": {
+    "timeWindow": {
+      "startedAt": "2026-05-15T12:16:04Z",
+      "endedAt": "2026-05-15T12:16:08Z"
+    },
+    "spatialUncertaintyMeters": 1000,
+    "joinKeys": {
+      "timeBucket": "2026-05-15T12:16Z"
+    }
+  },
+  "privacy": {
+    "containsRawMedia": false,
+    "retentionPolicy": "metadata_only",
+    "locationPrecision": "none"
+  }
+}

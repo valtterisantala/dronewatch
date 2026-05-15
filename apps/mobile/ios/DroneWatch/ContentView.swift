@@ -1077,8 +1077,10 @@ struct ContentView: View {
         if coordinator.state == .targetLost {
             return .targetLost
         }
-        if coordinator.state == .tracking && coordinator.stabilityScore < 0.3 {
-            return .targetLost
+        if coordinator.trackingPhase == .nominated ||
+            coordinator.trackingPhase == .acquiring ||
+            coordinator.trackingPhase == .recovering {
+            return .targetNominated
         }
         if coordinator.state == .tracking && coordinator.progress >= 0.78 {
             return .almostDone
@@ -1097,7 +1099,14 @@ struct ContentView: View {
     }
 
     private var targetAccent: Color {
-        visualState == .targetLost ? lostRed : primaryGreen
+        switch visualState {
+        case .targetNominated:
+            return acquiringYellow
+        case .targetLost:
+            return lostRed
+        default:
+            return primaryGreen
+        }
     }
 
     private var statusAccent: Color {

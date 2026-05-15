@@ -13,6 +13,15 @@ enum GuidedCaptureState: String {
     case unavailable = "unavailable"
 }
 
+enum TrackingPhase: String {
+    case ready
+    case nominated
+    case acquiring
+    case tracking
+    case recovering
+    case lost
+}
+
 private struct TrackingTraceSample {
     let timestamp: Date
     let box: CGRect
@@ -22,6 +31,26 @@ private struct TrackingTraceSample {
 private struct TargetLostEvent {
     let timestamp: Date
     let reason: String
+}
+
+private struct TargetCandidate {
+    let box: CGRect
+    let score: Double
+    let scoreReasons: [String]
+    let source: String
+}
+
+private struct ReacquisitionAttempt {
+    let timestamp: Date
+    let searchBox: CGRect
+    let candidateCount: Int
+    let acceptedCandidate: Bool
+}
+
+private struct ReacquisitionEvent {
+    let timestamp: Date
+    let reason: String
+    let durationMs: Int
 }
 
 private struct CameraZoomSample {
@@ -41,6 +70,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     @Published private(set) var progress = 0.0
     @Published private(set) var qualityLabel = "Not started"
     @Published private(set) var stabilityScore = 0.0
+    @Published private(set) var trackingPhase: TrackingPhase = .ready
     @Published private(set) var trackingBox: CGRect?
     @Published private(set) var trackingConfidence = 0.0
     @Published private(set) var zoomFactor = 1.0
@@ -69,9 +99,16 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     private var trackingRequest: VNTrackObjectRequest?
     private var trackingTrace: [TrackingTraceSample] = []
     private var targetLostEvents: [TargetLostEvent] = []
+    private var reacquisitionAttempts: [ReacquisitionAttempt] = []
+    private var reacquisitionEvents: [ReacquisitionEvent] = []
     private var trackingFrameCount = 0
     private var lastTraceSampleAt: Date?
     private var lastTrackingUpdateAt: Date?
+    private var recoveryStartedAt: Date?
+    private var lastRecoveryAttemptAt: Date?
+    private var latestSaliencyBoxes: [CGRect] = []
+    private var lastSaliencyAnalysisAt: Date?
+    private var isRunningSaliencyAnalysis = false
     private var consecutiveLowConfidenceFrames = 0
     private var zoomTrace: [CameraZoomSample] = []
     private var lensSwitchCount = 0
@@ -131,15 +168,24 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
 
     func nominateTarget(at normalizedPoint: CGPoint) {
         targetCenter = clamp(point: normalizedPoint)
-        let selectedBox = box(around: targetCenter)
-        trackingBox = selectedBox
-        trackingConfidence = 0.35
-        prepareVisionTracker(for: selectedBox)
 
         if state == .targetLost || state == .complete {
             resetTrackingRuntime()
             state = .ready
         }
+
+        let candidates = targetCandidates(around: targetCenter, source: "tap")
+        let selectedCandidate = bestCandidate(from: candidates, tapPoint: targetCenter)
+        let selectedBox = selectedCandidate.box
+
+        trackingBox = selectedBox
+        trackingConfidence = max(0.34, min(0.72, selectedCandidate.score))
+        trackingPhase = .nominated
+        prepareVisionTracker(for: selectedBox)
+        let selectedReasons = selectedCandidate.scoreReasons.joined(separator: ",")
+        trackingDebug(
+            "lock tap=\(normalizedPoint.debugDescription) box=\(selectedBox.debugDescription) score=\(rounded(selectedCandidate.score)) source=\(selectedCandidate.source) reasons=\(selectedReasons)"
+        )
 
         if state == .ready || state == .complete {
             guidanceText = "Target nominated. Start tracking when the object is inside the box."
@@ -164,6 +210,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         resetTrackingEvidence()
         recordCurrentZoomSampleIfNeeded(preset: nil)
         state = .tracking
+        trackingPhase = .acquiring
         guidanceText = "Keep the object inside the box."
         startLocationCapture()
 
@@ -182,6 +229,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         timer?.invalidate()
         timer = nil
         state = .complete
+        trackingPhase = .ready
         guidanceText = "Observation package generated locally."
         progress = min(1, progress)
         observationPackagePreview = makeObservationPackagePreview()
@@ -199,6 +247,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         observationPackagePreview = ""
         trackingBox = nil
         trackingConfidence = 0
+        trackingPhase = .ready
         resetTrackingRuntime()
         resetCameraEvidence()
         state = cameraConfigured ? .ready : .previewStarting
@@ -267,6 +316,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
 
             DispatchQueue.main.async {
                 self.state = .ready
+                self.trackingPhase = .ready
                 self.guidanceText = "Point at a flying object and tap to nominate it."
                 self.qualityLabel = "Not started"
                 self.errorText = nil
@@ -496,7 +546,12 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         progress = min(1, elapsed / 10)
 
         if let lastTrackingUpdateAt, Date().timeIntervalSince(lastTrackingUpdateAt) > 1.2 {
-            markTargetLost(reason: "tracker_uncertain")
+            if trackingPhase == .recovering,
+               Date().timeIntervalSince(recoveryStartedAt ?? lastTrackingUpdateAt) > 2.0 {
+                markTargetLost(reason: "tracker_uncertain")
+            } else {
+                beginQuietRecovery(reason: "tracker_uncertain")
+            }
             return
         }
 
@@ -523,6 +578,8 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
+        maybeUpdatePreTapSaliency(from: sampleBuffer)
+
         guard let trackingRequest,
               state == .ready || state == .tracking else {
             return
@@ -537,7 +594,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         } catch {
             if state == .tracking {
                 DispatchQueue.main.async { [weak self] in
-                    self?.markTargetLost(reason: "tracker_uncertain")
+                    self?.handleTrackingFailure(reason: "tracker_uncertain")
                 }
             }
             return
@@ -546,7 +603,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         guard let observation = trackingRequest.results?.first as? VNDetectedObjectObservation else {
             if state == .tracking {
                 DispatchQueue.main.async { [weak self] in
-                    self?.markTargetLost(reason: "tracker_uncertain")
+                    self?.handleTrackingFailure(reason: "tracker_uncertain")
                 }
             }
             return
@@ -649,7 +706,7 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                     "frameCount": max(trackingFrameCount, durationMs / 33, 1),
                     "continuityScore": rounded(continuityScore),
                     "targetLostEvents": serializedTargetLostEvents(),
-                    "reacquisitionEvents": [],
+                    "reacquisitionEvents": serializedReacquisitionEvents(),
                     "boundingBoxTrace": boundingBoxTrace(startedAt: startedAt, endedAt: endedAt)
                 ],
                 "motion": motion,
@@ -821,11 +878,17 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         }
 
         let clampedBox = clamp(box: box)
+        let usefulBox = isUseful(box: clampedBox)
         trackingBox = clampedBox
         targetCenter = CGPoint(x: clampedBox.midX, y: clampedBox.midY)
         trackingConfidence = max(0, min(1, confidence))
         lastTrackingUpdateAt = timestamp
         trackingFrameCount += 1
+
+        if state == .ready {
+            trackingPhase = trackingConfidence >= 0.24 && usefulBox ? .nominated : .acquiring
+            return
+        }
 
         if state == .tracking {
             if shouldRecordTraceSample(at: timestamp) {
@@ -833,16 +896,100 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                 lastTraceSampleAt = timestamp
             }
 
-            if trackingConfidence < 0.18 || !isUseful(box: clampedBox) {
+            if trackingConfidence < 0.18 || !usefulBox {
                 consecutiveLowConfidenceFrames += 1
             } else {
+                if trackingPhase == .recovering {
+                    recordReacquisitionSuccess(reason: "tracker_uncertain")
+                }
+                trackingPhase = trackingConfidence < 0.32 ? .acquiring : .tracking
+                recoveryStartedAt = nil
+                lastRecoveryAttemptAt = nil
                 consecutiveLowConfidenceFrames = 0
             }
 
-            if consecutiveLowConfidenceFrames >= 3 {
-                markTargetLost(reason: isUseful(box: clampedBox) ? "tracker_uncertain" : "out_of_frame")
+            if consecutiveLowConfidenceFrames >= 2 {
+                beginQuietRecovery(reason: usefulBox ? "tracker_uncertain" : "out_of_frame")
+            }
+
+            if consecutiveLowConfidenceFrames >= 8 ||
+                (trackingPhase == .recovering && Date().timeIntervalSince(recoveryStartedAt ?? timestamp) > 2.0) {
+                markTargetLost(reason: usefulBox ? "tracker_uncertain" : "out_of_frame")
             }
         }
+    }
+
+    private func handleTrackingFailure(reason: String) {
+        guard state == .tracking else {
+            return
+        }
+
+        consecutiveLowConfidenceFrames += 1
+        beginQuietRecovery(reason: reason)
+        if consecutiveLowConfidenceFrames >= 8 ||
+            (trackingPhase == .recovering && Date().timeIntervalSince(recoveryStartedAt ?? Date()) > 2.0) {
+            markTargetLost(reason: reason)
+        }
+    }
+
+    private func beginQuietRecovery(reason: String) {
+        guard state == .tracking else {
+            return
+        }
+
+        if trackingPhase != .recovering {
+            recoveryStartedAt = Date()
+            trackingDebug("recovery start reason=\(reason) lastBox=\((trackingBox ?? box(around: targetCenter)).debugDescription)")
+        }
+
+        trackingPhase = .recovering
+        qualityLabel = "Acquiring"
+        guidanceText = "Keep the object in view."
+        stabilityScore = max(0.12, min(stabilityScore, 0.35))
+
+        guard Date().timeIntervalSince(lastRecoveryAttemptAt ?? .distantPast) > 0.35 else {
+            return
+        }
+
+        lastRecoveryAttemptAt = Date()
+        let searchBox = recoverySearchBox()
+        let candidates = targetCandidates(in: searchBox, source: "local_recovery")
+        let selected = bestCandidate(from: candidates, tapPoint: CGPoint(x: searchBox.midX, y: searchBox.midY))
+        let acceptedCandidate = selected.score >= 0.38
+
+        reacquisitionAttempts.append(
+            ReacquisitionAttempt(
+                timestamp: Date(),
+                searchBox: searchBox,
+                candidateCount: candidates.count,
+                acceptedCandidate: acceptedCandidate
+            )
+        )
+
+        let selectedReasons = selected.scoreReasons.joined(separator: ",")
+        trackingDebug(
+            "recovery attempt candidates=\(candidates.count) acceptedCandidate=\(acceptedCandidate) score=\(rounded(selected.score)) box=\(selected.box.debugDescription) reasons=\(selectedReasons)"
+        )
+
+        guard acceptedCandidate else {
+            return
+        }
+
+        trackingBox = selected.box
+        targetCenter = CGPoint(x: selected.box.midX, y: selected.box.midY)
+        trackingConfidence = max(trackingConfidence, min(0.46, selected.score))
+        prepareVisionTracker(for: selected.box)
+    }
+
+    private func recordReacquisitionSuccess(reason: String) {
+        let now = Date()
+        let durationMs = max(0, Int(now.timeIntervalSince(recoveryStartedAt ?? now) * 1000))
+        reacquisitionEvents.append(ReacquisitionEvent(timestamp: now, reason: reason, durationMs: durationMs))
+        trackingPhase = .tracking
+        recoveryStartedAt = nil
+        lastRecoveryAttemptAt = nil
+        consecutiveLowConfidenceFrames = 0
+        trackingDebug("recovery success durationMs=\(durationMs) reason=\(reason)")
     }
 
     private func markTargetLost(reason: String) {
@@ -854,12 +1001,14 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
         timer?.invalidate()
         timer = nil
         state = .targetLost
+        trackingPhase = .lost
         qualityLabel = "Lost"
         guidanceText = "Target lost. Find the object and tap it again."
         progress = min(progress, 0.99)
         stabilityScore = 0.08
         trackingConfidence = min(trackingConfidence, 0.12)
         targetLostEvents.append(TargetLostEvent(timestamp: Date(), reason: reason))
+        trackingDebug("lost reason=\(reason) lowConfidenceFrames=\(consecutiveLowConfidenceFrames)")
     }
 
     private func resetTrackingRuntime() {
@@ -873,9 +1022,13 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
     private func resetTrackingEvidence() {
         trackingTrace = []
         targetLostEvents = []
+        reacquisitionAttempts = []
+        reacquisitionEvents = []
         trackingFrameCount = 0
         lastTraceSampleAt = nil
         lastTrackingUpdateAt = nil
+        recoveryStartedAt = nil
+        lastRecoveryAttemptAt = nil
         consecutiveLowConfidenceFrames = 0
     }
 
@@ -923,6 +1076,121 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
                 "reason": event.reason
             ]
         }
+    }
+
+    private func serializedReacquisitionEvents() -> [[String: Any]] {
+        reacquisitionEvents.map { event in
+            [
+                "timestamp": isoString(event.timestamp),
+                "reason": event.reason,
+                "durationMs": event.durationMs
+            ]
+        }
+    }
+
+    private func targetCandidates(around point: CGPoint, source: String) -> [TargetCandidate] {
+        let base = box(around: point)
+        let zoomScale = min(1.45, max(0.75, sqrt(requestedZoomFactor) / 1.8))
+        let sizes = [0.55, 0.72, 0.9, 1.1].map { factor in
+            CGSize(width: base.width * factor / zoomScale, height: base.height * factor / zoomScale)
+        }
+        let offset = max(0.012, min(0.035, 0.045 / max(1, requestedZoomFactor)))
+        let offsets = [
+            CGPoint.zero,
+            CGPoint(x: -offset, y: 0),
+            CGPoint(x: offset, y: 0),
+            CGPoint(x: 0, y: -offset),
+            CGPoint(x: 0, y: offset)
+        ]
+
+        return sizes.flatMap { size in
+            offsets.map { offsetPoint in
+                let center = clamp(point: CGPoint(x: point.x + offsetPoint.x, y: point.y + offsetPoint.y))
+                let rect = clamp(box: CGRect(
+                    x: center.x - size.width / 2,
+                    y: center.y - size.height / 2,
+                    width: size.width,
+                    height: size.height
+                ))
+                return scoreCandidate(rect, tapPoint: point, source: source)
+            }
+        }
+    }
+
+    private func targetCandidates(in searchBox: CGRect, source: String) -> [TargetCandidate] {
+        let searchCenter = CGPoint(x: searchBox.midX, y: searchBox.midY)
+        var candidates = targetCandidates(around: searchCenter, source: source)
+
+        let localSaliency = latestSaliencyBoxes
+            .filter { $0.intersects(searchBox) }
+            .map { clamp(box: $0.intersection(searchBox).isNull ? $0 : $0.intersection(searchBox)) }
+
+        candidates.append(contentsOf: localSaliency.map { scoreCandidate($0, tapPoint: searchCenter, source: "saliency_recovery") })
+        return candidates
+    }
+
+    private func bestCandidate(from candidates: [TargetCandidate], tapPoint: CGPoint) -> TargetCandidate {
+        candidates.max { $0.score < $1.score } ??
+            scoreCandidate(box(around: tapPoint), tapPoint: tapPoint, source: "fallback")
+    }
+
+    private func scoreCandidate(_ candidateBox: CGRect, tapPoint: CGPoint, source: String) -> TargetCandidate {
+        let candidate = clamp(box: candidateBox)
+        let center = CGPoint(x: candidate.midX, y: candidate.midY)
+        let distance = hypot(center.x - tapPoint.x, center.y - tapPoint.y)
+        let distanceScore = max(0, 1 - min(1, distance / 0.16))
+
+        let base = box(around: tapPoint)
+        let targetArea = base.width * base.height
+        let candidateArea = candidate.width * candidate.height
+        let sizeDelta = abs(candidateArea - targetArea) / max(targetArea, 0.001)
+        let sizeScore = max(0, 1 - min(1, sizeDelta))
+
+        let saliencyOverlap = latestSaliencyBoxes
+            .map { intersectionRatio(candidate, $0) }
+            .max() ?? 0
+        let zoomFitScore = requestedZoomFactor >= 2 ? max(0, 1 - candidateArea / max(targetArea, 0.001)) : 0.5
+
+        var score = 0.22
+        score += distanceScore * 0.28
+        score += sizeScore * 0.2
+        score += min(1, saliencyOverlap * 2.4) * 0.22
+        score += zoomFitScore * 0.08
+
+        var reasons = [
+            "tap_distance:\(rounded(distanceScore))",
+            "roi_size:\(rounded(sizeScore))",
+            "zoom_fit:\(rounded(zoomFitScore))"
+        ]
+
+        if saliencyOverlap > 0 {
+            reasons.append("saliency_overlap:\(rounded(saliencyOverlap))")
+        }
+
+        if source.contains("recovery") {
+            score += 0.05
+            reasons.append("local_recovery")
+        }
+
+        return TargetCandidate(
+            box: candidate,
+            score: max(0, min(1, score)),
+            scoreReasons: reasons,
+            source: source
+        )
+    }
+
+    private func recoverySearchBox() -> CGRect {
+        let base = trackingBox ?? box(around: targetCenter)
+        let expansion: CGFloat = 1.75
+        let width = min(0.8, base.width * expansion)
+        let height = min(0.8, base.height * expansion)
+        return clamp(box: CGRect(
+            x: base.midX - width / 2,
+            y: base.midY - height / 2,
+            width: width,
+            height: height
+        ))
     }
 
     private func box(around point: CGPoint) -> CGRect {
@@ -975,6 +1243,61 @@ final class GuidedCaptureCoordinator: NSObject, ObservableObject, CLLocationMana
             box.minY >= -0.02 &&
             box.maxX <= 1.02 &&
             box.maxY <= 1.02
+    }
+
+    private func intersectionRatio(_ lhs: CGRect, _ rhs: CGRect) -> Double {
+        let intersection = lhs.intersection(rhs)
+        guard !intersection.isNull else {
+            return 0
+        }
+        let intersectionArea = intersection.width * intersection.height
+        let lhsArea = max(lhs.width * lhs.height, 0.001)
+        return Double(max(0, intersectionArea / lhsArea))
+    }
+
+    private func maybeUpdatePreTapSaliency(from sampleBuffer: CMSampleBuffer) {
+        guard (state == .ready && trackingBox == nil) || trackingPhase == .recovering else {
+            return
+        }
+        guard Date().timeIntervalSince(lastSaliencyAnalysisAt ?? .distantPast) > 1.0,
+              !isRunningSaliencyAnalysis else {
+            return
+        }
+
+        isRunningSaliencyAnalysis = true
+        lastSaliencyAnalysisAt = Date()
+
+        let request = VNGenerateObjectnessBasedSaliencyImageRequest()
+        let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .right, options: [:])
+
+        do {
+            try handler.perform([request])
+            let observations = request.results ?? []
+            let boxes = observations
+                .flatMap { $0.salientObjects ?? [] }
+                .map { self.displayBox(fromVisionBox: $0.boundingBox) }
+                .map { self.clamp(box: $0) }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.latestSaliencyBoxes = boxes
+                self?.isRunningSaliencyAnalysis = false
+                if !boxes.isEmpty {
+                    self?.trackingDebug("saliency boxes=\(boxes.count)")
+                }
+            }
+        } catch {
+            DispatchQueue.main.async { [weak self] in
+                self?.latestSaliencyBoxes = []
+                self?.isRunningSaliencyAnalysis = false
+                self?.trackingDebug("saliency unavailable error=\(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func trackingDebug(_ message: String) {
+        #if DEBUG
+        print("DroneWatch tracking: \(message)")
+        #endif
     }
 
     private func rounded(_ value: Double) -> Double {

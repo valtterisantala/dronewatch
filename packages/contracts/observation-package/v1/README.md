@@ -8,6 +8,7 @@ It represents a human-submitted observation plus the structured evidence capture
 
 - `schema.json`: machine-readable JSON Schema for the contract shape.
 - `examples/successful-tracked-observation.json`: strong guided capture with tracking and optional audio.
+- `examples/weak-scored-observation.json`: weak but still reviewable guided capture.
 - `examples/weak-insufficient-observation.json`: low-quality observation that should remain visibly uncertain.
 - `examples/observation-without-audio.json`: valid package without optional audio.
 

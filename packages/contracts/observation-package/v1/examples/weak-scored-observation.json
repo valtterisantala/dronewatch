@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "observation_package.v1",
+  "packageId": "obs_pkg_20260515_0004",
+  "sourceType": "civilian_report",
+  "packageKind": "observation_package",
+  "createdAt": "2026-05-15T14:10:19Z",
+  "captureSession": {
+    "captureSessionId": "cap_20260515_0004",
+    "startedAt": "2026-05-15T14:10:12Z",
+    "endedAt": "2026-05-15T14:10:19Z",
+    "appPlatform": "ios",
+    "captureMode": "guided_camera",
+    "device": {
+      "deviceClass": "iphone",
+      "osVersion": "iOS 18.5",
+      "appVersion": "0.1.0"
+    }
+  },
+  "humanReport": {
+    "observationType": "unknown_airborne_object",
+    "observerConfidence": "medium",
+    "countEstimate": 1,
+    "note": "Object was visible briefly and hard to keep centered."
+  },
+  "evidence": {
+    "tracking": {
+      "trackingStatus": "weak",
+      "targetTrackId": "track_weak_scored_01",
+      "trackStartedAt": "2026-05-15T14:10:14Z",
+      "trackEndedAt": "2026-05-15T14:10:18Z",
+      "durationMs": 4200,
+      "frameCount": 86,
+      "continuityScore": 0.46,
+      "targetLostEvents": [
+        {
+          "timestamp": "2026-05-15T14:10:16Z",
+          "durationMs": 650,
+          "reason": "out_of_frame"
+        }
+      ],
+      "reacquisitionEvents": [
+        {
+          "timestamp": "2026-05-15T14:10:17Z",
+          "reason": "unknown"
+        }
+      ],
+      "boundingBoxTrace": [
+        {
+          "timestamp": "2026-05-15T14:10:14Z",
+          "box": {
+            "x": 0.71,
+            "y": 0.28,
+            "width": 0.025,
+            "height": 0.02
+          },
+          "confidence": 0.41
+        },
+        {
+          "timestamp": "2026-05-15T14:10:18Z",
+          "box": {
+            "x": 0.78,
+            "y": 0.33,
+            "width": 0.022,
+            "height": 0.018
+          },
+          "confidence": 0.38
+        }
+      ]
+    },
+    "motion": {
+      "devicePoseTrace": [
+        {
+          "timestamp": "2026-05-15T14:10:14Z",
+          "headingDegrees": 310.2,
+          "pitchDegrees": 31.7,
+          "rollDegrees": 6.1
+        },
+        {
+          "timestamp": "2026-05-15T14:10:18Z",
+          "headingDegrees": 332.6,
+          "pitchDegrees": 34.9,
+          "rollDegrees": 11.4
+        }
+      ],
+      "bearingEstimate": {
+        "degrees": 321.4,
+        "source": "device_heading",
+        "uncertaintyDegrees": 48
+      },
+      "motionSummary": {
+        "apparentDirection": "unclear",
+        "stability": "some_jitter",
+        "headingStabilityScore": 0.35,
+        "motionSmoothnessScore": 0.43
+      }
+    }
+  },
+  "derivedEvidence": {
+    "qualityScore": 0.44,
+    "qualityTier": "weak",
+    "qualitySignals": {
+      "continuityScore": 0.41,
+      "visualConfidence": 0.4,
+      "headingConfidence": 0.35,
+      "motionStability": 0.43
+    },
+    "reasonCodes": [
+      "duration_below_strong",
+      "continuity_low",
+      "tracking_lost",
+      "low_visual_confidence",
+      "unstable_heading",
+      "audio_not_required"
+    ],
+    "insufficiencyReasons": [
+      "continuity_low",
+      "tracking_lost",
+      "low_visual_confidence",
+      "unstable_heading"
+    ],
+    "featureFlags": {
+      "hasBoundingBoxTrace": true,
+      "hasDevicePoseTrace": true,
+      "hasObserverLocation": true,
+      "hasAudioFeatures": false
+    },
+    "mlReadiness": "partial",
+    "compactFeatureSummary": {
+      "durationMs": 4200,
+      "frameCount": 86,
+      "bearingDegrees": 321.4,
+      "locationAccuracyMeters": 44
+    }
+  },
+  "validationJoin": {
+    "timeWindow": {
+      "startedAt": "2026-05-15T14:10:12Z",
+      "endedAt": "2026-05-15T14:10:19Z"
+    },
+    "observerLocation": {
+      "lat": 60.1712,
+      "lon": 24.9411,
+      "accuracyMeters": 44,
+      "source": "device_gps"
+    },
+    "spatialUncertaintyMeters": 440,
+    "roughBearingDegrees": 321.4,
+    "joinKeys": {
+      "geohash": "ud9wr",
+      "timeBucket": "2026-05-15T14:10Z"
+    }
+  },
+  "privacy": {
+    "containsRawMedia": false,
+    "retentionPolicy": "short_term_review",
+    "locationPrecision": "reduced"
+  }
+}

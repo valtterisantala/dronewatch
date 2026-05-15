@@ -98,9 +98,7 @@
       "observer_location_available",
       "audio_not_required"
     ],
-    "insufficiencyReasons": [
-      "audio_unavailable"
-    ],
+    "insufficiencyReasons": [],
     "featureFlags": {
       "hasBoundingBoxTrace": true,
       "hasDevicePoseTrace": true,

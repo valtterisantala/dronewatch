@@ -525,10 +525,13 @@
               "observer_location_available",
               "audio_supporting_evidence",
               "audio_not_required",
+              "duration_below_strong",
               "tracking_too_short",
+              "continuity_low",
               "tracking_lost",
               "low_visual_confidence",
               "no_location",
+              "unstable_heading",
               "poor_device_motion",
               "audio_unavailable",
               "observer_low_confidence"
@@ -541,9 +544,11 @@
             "type": "string",
             "enum": [
               "tracking_too_short",
+              "continuity_low",
               "tracking_lost",
               "low_visual_confidence",
               "no_location",
+              "unstable_heading",
               "poor_device_motion",
               "audio_unavailable",
               "observer_low_confidence"

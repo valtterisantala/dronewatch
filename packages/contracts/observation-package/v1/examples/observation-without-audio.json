@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "observation_package.v1",
+  "packageId": "obs_pkg_20260515_0003",
+  "sourceType": "civilian_report",
+  "packageKind": "observation_package",
+  "createdAt": "2026-05-15T13:42:31Z",
+  "captureSession": {
+    "captureSessionId": "cap_20260515_0003",
+    "startedAt": "2026-05-15T13:42:20Z",
+    "endedAt": "2026-05-15T13:42:31Z",
+    "appPlatform": "ios",
+    "captureMode": "guided_camera",
+    "device": {
+      "deviceClass": "iphone",
+      "osVersion": "iOS 18.5",
+      "appVersion": "0.1.0"
+    }
+  },
+  "humanReport": {
+    "observationType": "possible_drone",
+    "observerConfidence": "medium",
+    "countEstimate": 1
+  },
+  "evidence": {
+    "tracking": {
+      "trackingStatus": "tracked",
+      "targetTrackId": "track_no_audio_01",
+      "trackStartedAt": "2026-05-15T13:42:22Z",
+      "trackEndedAt": "2026-05-15T13:42:30Z",
+      "durationMs": 8000,
+      "frameCount": 240,
+      "boundingBoxTrace": [
+        {
+          "timestamp": "2026-05-15T13:42:22Z",
+          "box": {
+            "x": 0.35,
+            "y": 0.40,
+            "width": 0.03,
+            "height": 0.02
+          },
+          "confidence": 0.68
+        },
+        {
+          "timestamp": "2026-05-15T13:42:30Z",
+          "box": {
+            "x": 0.40,
+            "y": 0.39,
+            "width": 0.03,
+            "height": 0.02
+          },
+          "confidence": 0.65
+        }
+      ]
+    },
+    "motion": {
+      "devicePoseTrace": [
+        {
+          "timestamp": "2026-05-15T13:42:22Z",
+          "headingDegrees": 244.8,
+          "pitchDegrees": 18.3,
+          "rollDegrees": 0.8
+        },
+        {
+          "timestamp": "2026-05-15T13:42:30Z",
+          "headingDegrees": 247.2,
+          "pitchDegrees": 18.8,
+          "rollDegrees": 0.7
+        }
+      ],
+      "bearingEstimate": {
+        "degrees": 246,
+        "source": "device_heading",
+        "uncertaintyDegrees": 18
+      },
+      "motionSummary": {
+        "apparentDirection": "right_to_left",
+        "stability": "stable"
+      }
+    }
+  },
+  "derivedEvidence": {
+    "qualityScore": 0.67,
+    "qualityTier": "usable",
+    "insufficiencyReasons": [
+      "audio_unavailable"
+    ],
+    "featureFlags": {
+      "hasBoundingBoxTrace": true,
+      "hasDevicePoseTrace": true,
+      "hasObserverLocation": true,
+      "hasAudioFeatures": false
+    },
+    "mlReadiness": "partial"
+  },
+  "validationJoin": {
+    "timeWindow": {
+      "startedAt": "2026-05-15T13:42:20Z",
+      "endedAt": "2026-05-15T13:42:31Z"
+    },
+    "observerLocation": {
+      "lat": 60.1921,
+      "lon": 24.9458,
+      "accuracyMeters": 18,
+      "source": "device_gps"
+    },
+    "spatialUncertaintyMeters": 180,
+    "roughBearingDegrees": 246,
+    "joinKeys": {
+      "geohash": "ud9x2",
+      "timeBucket": "2026-05-15T13:42Z"
+    }
+  },
+  "privacy": {
+    "containsRawMedia": false,
+    "retentionPolicy": "short_term_review",
+    "locationPrecision": "exact"
+  }
+}

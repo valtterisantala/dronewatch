@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "observation_package.v1",
+  "packageId": "obs_pkg_20260515_0001",
+  "sourceType": "civilian_report",
+  "packageKind": "observation_package",
+  "createdAt": "2026-05-15T11:04:23Z",
+  "captureSession": {
+    "captureSessionId": "cap_20260515_0001",
+    "startedAt": "2026-05-15T11:04:10Z",
+    "endedAt": "2026-05-15T11:04:23Z",
+    "appPlatform": "ios",
+    "captureMode": "guided_camera",
+    "device": {
+      "deviceClass": "iphone",
+      "osVersion": "iOS 18.5",
+      "appVersion": "0.1.0"
+    }
+  },
+  "humanReport": {
+    "observationType": "possible_drone",
+    "observerConfidence": "high",
+    "countEstimate": 1,
+    "note": "Small aircraft-sized object moving steadily east."
+  },
+  "evidence": {
+    "tracking": {
+      "trackingStatus": "tracked",
+      "targetTrackId": "track_01",
+      "trackStartedAt": "2026-05-15T11:04:12Z",
+      "trackEndedAt": "2026-05-15T11:04:22Z",
+      "durationMs": 10000,
+      "frameCount": 300,
+      "boundingBoxTrace": [
+        {
+          "timestamp": "2026-05-15T11:04:12Z",
+          "box": {
+            "x": 0.42,
+            "y": 0.31,
+            "width": 0.04,
+            "height": 0.03
+          },
+          "confidence": 0.76
+        },
+        {
+          "timestamp": "2026-05-15T11:04:17Z",
+          "box": {
+            "x": 0.49,
+            "y": 0.30,
+            "width": 0.04,
+            "height": 0.03
+          },
+          "confidence": 0.82
+        },
+        {
+          "timestamp": "2026-05-15T11:04:22Z",
+          "box": {
+            "x": 0.57,
+            "y": 0.29,
+            "width": 0.04,
+            "height": 0.03
+          },
+          "confidence": 0.79
+        }
+      ]
+    },
+    "motion": {
+      "devicePoseTrace": [
+        {
+          "timestamp": "2026-05-15T11:04:12Z",
+          "headingDegrees": 88.4,
+          "pitchDegrees": 22.1,
+          "rollDegrees": 1.2
+        },
+        {
+          "timestamp": "2026-05-15T11:04:17Z",
+          "headingDegrees": 91.6,
+          "pitchDegrees": 21.4,
+          "rollDegrees": 1.5
+        }
+      ],
+      "bearingEstimate": {
+        "degrees": 90.5,
+        "source": "device_heading",
+        "uncertaintyDegrees": 12
+      },
+      "motionSummary": {
+        "apparentDirection": "left_to_right",
+        "stability": "stable"
+      }
+    },
+    "audio": {
+      "captured": true,
+      "sampleWindow": {
+        "startedAt": "2026-05-15T11:04:10Z",
+        "endedAt": "2026-05-15T11:04:23Z"
+      },
+      "features": {
+        "dominantFrequencyHz": 146.2,
+        "signalToNoiseRatioDb": 8.4
+      },
+      "quality": "usable"
+    }
+  },
+  "derivedEvidence": {
+    "qualityScore": 0.84,
+    "qualityTier": "strong",
+    "insufficiencyReasons": [],
+    "featureFlags": {
+      "hasBoundingBoxTrace": true,
+      "hasDevicePoseTrace": true,
+      "hasObserverLocation": true,
+      "hasAudioFeatures": true
+    },
+    "mlReadiness": "ready"
+  },
+  "validationJoin": {
+    "timeWindow": {
+      "startedAt": "2026-05-15T11:04:10Z",
+      "endedAt": "2026-05-15T11:04:23Z"
+    },
+    "observerLocation": {
+      "lat": 60.1699,
+      "lon": 24.9384,
+      "accuracyMeters": 12,
+      "source": "device_gps"
+    },
+    "spatialUncertaintyMeters": 120,
+    "roughBearingDegrees": 90.5,
+    "joinKeys": {
+      "geohash": "ud9wr",
+      "timeBucket": "2026-05-15T11:04Z"
+    }
+  },
+  "privacy": {
+    "containsRawMedia": false,
+    "retentionPolicy": "retain_for_validation",
+    "locationPrecision": "exact"
+  }
+}

@@ -15,3 +15,7 @@ This package is the main semantic boundary between:
 - downstream consumers such as Adaptive UI CUAS
 
 Contracts should be explicit, stable, and version-aware.
+
+## Current contracts
+
+- `observation-package/v1`: guided civilian Observation Package contract for camera-based capture evidence.
